@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Librería Páginas del Sol: catálogo con búsqueda por título y formularios de alta de libros y clientes." />
+    <title>Librería Páginas del Sol</title>
+    <link rel="stylesheet" href="css/styles.css" />
+    <!-- Orden importante: primero los datos y utilidades, luego la lógica que los usa. -->
+    <script src="js/datos.js" defer></script>
+    <script src="js/utilidades.js" defer></script>
+    <script src="js/catalogo.js" defer></script>
+    <script src="js/navegacion.js" defer></script>
+    <script src="js/libros.js" defer></script>
+    <script src="js/clientes.js" defer></script>
+    <script src="js/ventas-modelo.js" defer></script>
+    <script src="js/ventas.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#contenido">Saltar al contenido principal</a>
+
+    <header class="site-header">
+      <div class="container header-content">
+        <a class="brand" href="index.html">
+          <span class="brand-mark" aria-hidden="true">PS</span>
+          <span>Librería Páginas del Sol</span>
+        </a>
+        <nav aria-label="Navegación principal">
+          <ul class="nav-list">
+            <li><a class="nav-link" href="#catalogo" aria-current="page">Catálogo</a></li>
+            <li><a class="nav-link" href="#libros">Libros</a></li>
+            <li><a class="nav-link" href="#clientes">Clientes</a></li>
+            <li><a class="nav-link" href="#ventas">Ventas</a></li>
+            <li><a class="nav-link" href="#historial">Historial</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main id="contenido" class="container page">
+      <section id="catalogo" aria-labelledby="catalogo-titulo">
+        <div class="section-heading">
+          <p class="eyebrow">Nuestros libros</p>
+          <h1 id="catalogo-titulo">Catálogo</h1>
+        </div>
+
+        <form id="buscador-form" class="card search" role="search">
+          <label class="search__label" for="busqueda-titulo">Buscar por título</label>
+          <div class="search__controls">
+            <input
+              id="busqueda-titulo"
+              class="input"
+              name="busqueda"
+              type="search"
+              autocomplete="off"
+              placeholder="Ej.: viento"
+              aria-describedby="busqueda-ayuda"
+            />
+            <button class="button button--primary" type="submit">Buscar libros</button>
+            <button id="limpiar-busqueda" class="button button--secondary" type="button">Mostrar todo el catálogo</button>
+          </div>
+          <p id="busqueda-ayuda" class="help">
+            Se buscan coincidencias parciales sin distinguir mayúsculas de minúsculas.
+          </p>
+        </form>
+
+        <p id="catalogo-mensaje" class="message" role="status" aria-live="polite"></p>
+
+        <ul id="catalogo-lista" class="book-grid" aria-label="Libros del catálogo"></ul>
+
+        <noscript>
+          <p class="message message--warning">
+            El catálogo se genera con JavaScript. Activalo en el navegador para verlo.
+          </p>
+        </noscript>
+      </section>
+
+      <section id="libros" aria-labelledby="libros-titulo">
+        <div class="section-heading">
+          <p class="eyebrow">Alta de libros</p>
+          <h1 id="libros-titulo">Libros</h1>
+        </div>
+
+        <form id="form-libro" class="card form-alta" novalidate>
+          <div class="form-campo campo-ancho">
+            <label class="form-campo__label" for="libro-titulo">Título</label>
+            <input id="libro-titulo" class="input" name="titulo" type="text" autocomplete="off" />
+          </div>
+
+          <div class="form-campo">
+            <label class="form-campo__label" for="libro-isbn">ISBN</label>
+            <input
+              id="libro-isbn"
+              class="input"
+              name="isbn"
+              type="text"
+              autocomplete="off"
+              aria-describedby="libro-isbn-ayuda"
+            />
+            <p id="libro-isbn-ayuda" class="help">
+              Al comparar se ignoran espacios, guiones y mayúsculas.
+            </p>
+          </div>
+
+          <div class="form-campo">
+            <label class="form-campo__label" for="libro-precio">Precio (ARS)</label>
+            <input
+              id="libro-precio"
+              class="input"
+              name="precio"
+              type="number"
+              inputmode="decimal"
+              step="0.01"
+              autocomplete="off"
+              placeholder="Ej.: 12000"
+            />
+          </div>
+
+          <div class="form-campo">
+            <label class="form-campo__label" for="libro-editorial">Editorial</label>
+            <select id="libro-editorial" class="input" name="editorialId"></select>
+          </div>
+
+          <div class="form-campo">
+            <label class="form-campo__label" for="libro-genero">Género (opcional)</label>
+            <select id="libro-genero" class="input" name="generoId"></select>
+          </div>
+
+          <fieldset class="autores-fieldset campo-ancho">
+            <legend>Autores (al menos uno)</legend>
+            <div id="libro-autores" class="check-lista"></div>
+          </fieldset>
+
+          <div class="form-acciones campo-ancho">
+            <button class="button button--primary" type="submit">Agregar libro</button>
+            <button class="button button--secondary" type="reset">Limpiar formulario</button>
+          </div>
+        </form>
+
+        <div id="libros-errores" class="message message--warning" role="alert"></div>
+        <p id="libros-mensaje" class="message" role="status"></p>
+
+        <h2 id="libros-listado-titulo" class="listado-titulo">Libros cargados</h2>
+        <p id="libros-vacio" class="message message--info" hidden>
+          Todavía no hay libros en la lista. Dá de alta el primero con el formulario de arriba.
+        </p>
+        <div class="table-wrap">
+          <table class="table" aria-labelledby="libros-listado-titulo">
+            <thead>
+              <tr>
+                <th scope="col">Id</th>
+                <th scope="col">Título</th>
+                <th scope="col">ISBN</th>
+                <th scope="col">Precio</th>
+                <th scope="col">Editorial</th>
+                <th scope="col">Género</th>
+                <th scope="col">Autores</th>
+              </tr>
+            </thead>
+            <tbody id="libros-cuerpo"></tbody>
+          </table>
+        </div>
+
+        <noscript>
+          <p class="message message--warning">
+            El formulario y la tabla se generan con JavaScript. Activalo para usar esta sección.
+          </p>
+        </noscript>
+      </section>
+
+      <section id="clientes" aria-labelledby="clientes-titulo">
+        <div class="section-heading">
+          <p class="eyebrow">Alta de clientes</p>
+          <h1 id="clientes-titulo">Clientes</h1>
+        </div>
+
+        <form id="form-cliente" class="card form-alta" novalidate>
+          <div class="form-campo">
+            <label class="form-campo__label" for="cliente-nombre">Nombre completo</label>
+            <input id="cliente-nombre" class="input" name="nombreCompleto" type="text" autocomplete="off" />
+          </div>
+
+          <div class="form-campo">
+            <label class="form-campo__label" for="cliente-email">Email</label>
+            <input
+              id="cliente-email"
+              class="input"
+              name="email"
+              type="text"
+              inputmode="email"
+              autocomplete="off"
+              aria-describedby="cliente-email-ayuda"
+            />
+            <p id="cliente-email-ayuda" class="help">
+              Al comparar se ignoran espacios y mayúsculas.
+            </p>
+          </div>
+
+          <div class="form-acciones campo-ancho">
+            <button class="button button--primary" type="submit">Agregar cliente</button>
+            <button class="button button--secondary" type="reset">Limpiar formulario</button>
+          </div>
+        </form>
+
+        <div id="clientes-errores" class="message message--warning" role="alert"></div>
+        <p id="clientes-mensaje" class="message" role="status"></p>
+
+        <h2 id="clientes-listado-titulo" class="listado-titulo">Clientes cargados</h2>
+        <p id="clientes-vacio" class="message message--info" hidden>
+          Todavía no hay clientes en la lista. Dá de alta el primero con el formulario de arriba.
+        </p>
+        <div class="table-wrap">
+          <table class="table" aria-labelledby="clientes-listado-titulo">
+            <thead>
+              <tr>
+                <th scope="col">Id</th>
+                <th scope="col">Nombre completo</th>
+                <th scope="col">Email</th>
+              </tr>
+            </thead>
+            <tbody id="clientes-cuerpo"></tbody>
+          </table>
+        </div>
+
+        <noscript>
+          <p class="message message--warning">
+            El formulario y la tabla se generan con JavaScript. Activalo para usar esta sección.
+          </p>
+        </noscript>
+      </section>
+      <section id="ventas" aria-labelledby="ventas-titulo">
+        <div class="section-heading">
+          <p class="eyebrow">Ejercicio 5 · Simulación académica</p>
+          <h1 id="ventas-titulo">Ventas</h1>
+        </div>
+        <p class="message message--info">Las altas y ventas se guardan localmente en este navegador y perfil.</p>
+        <form id="form-venta" class="card form-alta" novalidate>
+          <div class="form-campo campo-ancho">
+            <label class="form-campo__label" for="venta-cliente">Cliente</label>
+            <select id="venta-cliente" class="input" aria-describedby="ventas-errores"></select>
+          </div>
+          <div class="form-campo">
+            <label class="form-campo__label" for="venta-libro">Libro</label>
+            <select id="venta-libro" class="input" aria-describedby="venta-ayuda ventas-errores"></select>
+          </div>
+          <div class="form-campo">
+            <label class="form-campo__label" for="venta-cantidad">Cantidad</label>
+            <input id="venta-cantidad" class="input" type="number" min="1" step="1" value="1" inputmode="numeric" aria-describedby="venta-ayuda ventas-errores" />
+          </div>
+          <p id="venta-ayuda" class="help campo-ancho">Usá cantidades enteras mayores que cero. Si el libro ya está agregado, modificá la cantidad en su renglón.</p>
+          <div class="form-acciones campo-ancho">
+            <button id="venta-agregar" class="button button--secondary" type="button">Agregar renglón</button>
+          </div>
+          <div class="campo-ancho">
+            <h2 id="venta-borrador-titulo">Borrador de la venta</h2>
+            <p id="venta-vacio" class="message">Todavía no agregaste libros a esta venta.</p>
+            <div class="table-wrap">
+              <table class="table" aria-labelledby="venta-borrador-titulo">
+                <thead><tr><th scope="col">Libro</th><th scope="col">Cantidad</th><th scope="col">Precio unitario</th><th scope="col">Subtotal</th><th scope="col">Acción</th></tr></thead>
+                <tbody id="venta-cuerpo"></tbody>
+              </table>
+            </div>
+            <p class="venta-total">Total: <output id="venta-total">$ 0,00</output></p>
+          </div>
+          <div class="form-acciones campo-ancho">
+            <button id="venta-confirmar" class="button button--primary" type="submit">Confirmar venta simulada</button>
+          </div>
+        </form>
+        <div id="ventas-errores" class="message message--warning" role="alert" tabindex="-1"></div>
+        <p id="ventas-mensaje" class="message" role="status"></p>
+      </section>
+
+      <section id="historial" aria-labelledby="historial-titulo">
+        <div class="section-heading">
+          <p class="eyebrow">Ventas confirmadas · Sólo consulta</p>
+          <h1 id="historial-titulo">Historial</h1>
+        </div>
+        <p id="historial-vacio" class="message message--info">Todavía no hay ventas confirmadas guardadas localmente.</p>
+        <div class="table-wrap">
+          <table class="table" aria-labelledby="historial-titulo">
+            <thead><tr><th scope="col">Id</th><th scope="col">Fecha</th><th scope="col">Cliente</th><th scope="col">Total</th><th scope="col">Consulta</th></tr></thead>
+            <tbody id="historial-cuerpo"></tbody>
+          </table>
+        </div>
+        <div id="historial-detalle" class="card detalle-venta" role="region" aria-labelledby="historial-detalle-titulo" hidden></div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">Librería Páginas del Sol · Datos ficticios con fines de práctica</div>
+    </footer>
+  </body>
+</html>
