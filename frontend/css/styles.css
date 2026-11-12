@@ -391,6 +391,41 @@ select:focus-visible {
   min-width: 0;
 }
 
+/* Global · Ejercicio 2: lista de autores con rol y orden (DD-01). */
+.autor-lista {
+  display: grid;
+  gap: var(--espacio-2);
+  margin: var(--espacio-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.autor-opcion {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(8rem, 11rem) 5rem;
+  gap: var(--espacio-2);
+  align-items: center;
+}
+
+.autor-orden {
+  color: var(--color-texto-suave);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 540px) {
+  .autor-opcion {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .autor-opcion .check-opcion {
+    grid-column: 1 / -1;
+  }
+}
+
+.button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .form-acciones {
   display: flex;
   flex-wrap: wrap;

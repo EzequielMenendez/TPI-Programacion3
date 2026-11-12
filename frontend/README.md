@@ -386,3 +386,47 @@ El caso de precio histórico se replicó **siguiendo el procedimiento de la
 consigna** (modificar sólo el precio del catálogo persistido y recargar). La
 comprobación guiada por el docente en una copia del proyecto sigue siendo
 parte de la entrega; el comportamiento observado coincide con lo pedido.
+
+## Global · Ejercicio 2 · Alta de libros y clientes contra la API
+
+Las secciones **Libros** y **Clientes** ya no usan los datos locales: leen y
+escriben en la API a través de `js/api.js`, el único archivo que llama a
+`fetch`. La base pública es `/api` y las rutas conservan la barra final del
+backend (`/api/libros/`, `/api/clientes/`).
+
+| Acción | Petición |
+| --- | --- |
+| Opciones de editorial, género y autores | `GET /editoriales/`, `GET /generos/` y `GET /autores/` (`limit=100`) |
+| Verificar un autor al marcarlo | `GET /autores/{id}` |
+| Alta de libro | `POST /libros/` |
+| Alta de cliente | `POST /clientes/` con `nombre` y `email` |
+| Buscar un cliente por ID | `GET /clientes/{id}` |
+| Tablas «Libros cargados» y «Clientes cargados» | `GET /libros/` y `GET /clientes/` (`limit=100`) |
+
+**Opción elegida para los selectores (DD-01: listados + verificación por ID).**
+Nuestra API tiene listados, así que los usamos: editoriales y géneros se cargan
+en sus `<select>` y los autores en una lista de casillas. Al marcar un autor se
+consulta `GET /autores/{id}` para confirmar que sigue existiendo, se habilita
+su rol (autor, coautor, traductor o ilustrador) y se le asigna el `orden`
+según el orden en que se marcó (1, 2, 3…; desmarcar renumera). Para clientes,
+además del listado de la tabla, hay una búsqueda individual con
+`GET /clientes/{id}`.
+
+**Validación y resultado.** Antes de enviar se validan los campos con las
+mismas reglas del contrato (título hasta 200 caracteres, ISBN de 10 a 17
+dígitos y guiones, precio positivo con hasta 2 decimales, stock entero desde
+cero, editorial obligatoria, género opcional, al menos un autor sin repetir;
+nombre y email del cliente). Los errores se muestran todos juntos debajo del
+formulario. Con el `201` se usa el registro devuelto para agregar la fila a la
+tabla y se emite `libros-actualizados` o `clientes-actualizados` con el
+registro en `event.detail` (`{ libro }` / `{ cliente }`) para que el catálogo y
+la venta se actualicen. Ante un `409` o `422` se muestra el mensaje del
+servidor y el formulario queda como estaba, autores marcados incluidos (RN-UI-01). El botón de envío se deshabilita
+mientras se procesa la petición.
+
+La unicidad del ISBN y del email la decide la base: el frontend no compara
+contra listas locales.
+
+**Pruebas.** `node --test tests/*.test.cjs` desde `frontend/` (Node 20 o
+superior, sin dependencias). `coordinacion.test.cjs` cubre el flujo de altas
+con un `fetch` simulado: contrato enviado, 201, 409, 422 y sin conexión.

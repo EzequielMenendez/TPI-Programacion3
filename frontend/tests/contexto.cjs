@@ -4,7 +4,7 @@ const vm = require('node:vm');
 
 module.exports = function contexto() {
   const sandbox = vm.createContext({ console, document: { addEventListener() {} } });
-  for (const archivo of ['datos', 'utilidades', 'catalogo', 'libros', 'clientes', 'ventas-modelo']) {
+  for (const archivo of ['datos', 'utilidades', 'api', 'catalogo', 'libros', 'clientes', 'ventas-modelo']) {
     const ruta = path.join(__dirname, '..', 'js', archivo + '.js');
     if (fs.existsSync(ruta)) vm.runInContext(fs.readFileSync(ruta, 'utf8'), sandbox, { filename: ruta });
   }

@@ -9,6 +9,7 @@
     <!-- Orden importante: primero los datos y utilidades, luego la lógica que los usa. -->
     <script src="js/datos.js" defer></script>
     <script src="js/utilidades.js" defer></script>
+    <script src="js/api.js" defer></script>
     <script src="js/catalogo.js" defer></script>
     <script src="js/navegacion.js" defer></script>
     <script src="js/libros.js" defer></script>
@@ -84,7 +85,7 @@
         <form id="form-libro" class="card form-alta" novalidate>
           <div class="form-campo campo-ancho">
             <label class="form-campo__label" for="libro-titulo">Título</label>
-            <input id="libro-titulo" class="input" name="titulo" type="text" autocomplete="off" />
+            <input id="libro-titulo" class="input" name="titulo" type="text" maxlength="200" autocomplete="off" />
           </div>
 
           <div class="form-campo">
@@ -95,10 +96,12 @@
               name="isbn"
               type="text"
               autocomplete="off"
+              maxlength="17"
+              placeholder="Ej.: 978-950-000-010-3"
               aria-describedby="libro-isbn-ayuda"
             />
             <p id="libro-isbn-ayuda" class="help">
-              Al comparar se ignoran espacios, guiones y mayúsculas.
+              Entre 10 y 17 caracteres: dígitos y guiones (el último puede ser X).
             </p>
           </div>
 
@@ -110,10 +113,28 @@
               name="precio"
               type="number"
               inputmode="decimal"
+              min="0.01"
               step="0.01"
               autocomplete="off"
               placeholder="Ej.: 12000"
             />
+          </div>
+
+          <div class="form-campo">
+            <label class="form-campo__label" for="libro-stock">Stock</label>
+            <input
+              id="libro-stock"
+              class="input"
+              name="stock"
+              type="number"
+              inputmode="numeric"
+              min="0"
+              step="1"
+              value="0"
+              autocomplete="off"
+              aria-describedby="libro-stock-ayuda"
+            />
+            <p id="libro-stock-ayuda" class="help">Unidades disponibles: un entero desde cero.</p>
           </div>
 
           <div class="form-campo">
@@ -128,11 +149,16 @@
 
           <fieldset class="autores-fieldset campo-ancho">
             <legend>Autores (al menos uno)</legend>
-            <div id="libro-autores" class="check-lista"></div>
+            <p id="libro-autores-ayuda" class="help">
+              Marcá cada autor y elegí su rol. El orden de aparición es el orden en que los marcás.
+            </p>
+            <ul id="libro-autores" class="autor-lista" aria-label="Autores disponibles"></ul>
+            <p id="libro-autores-vacio" class="help" hidden>No hay autores cargados en la API.</p>
+            <p id="libro-autor-resultado" class="message" role="status" aria-live="polite"></p>
           </fieldset>
 
           <div class="form-acciones campo-ancho">
-            <button class="button button--primary" type="submit">Agregar libro</button>
+            <button id="libro-enviar" class="button button--primary" type="submit">Agregar libro</button>
             <button class="button button--secondary" type="reset">Limpiar formulario</button>
           </div>
         </form>
@@ -142,7 +168,7 @@
 
         <h2 id="libros-listado-titulo" class="listado-titulo">Libros cargados</h2>
         <p id="libros-vacio" class="message message--info" hidden>
-          Todavía no hay libros en la lista. Dá de alta el primero con el formulario de arriba.
+          Todavía no hay libros registrados. Dá de alta el primero con el formulario de arriba.
         </p>
         <div class="table-wrap">
           <table class="table" aria-labelledby="libros-listado-titulo">
@@ -152,9 +178,9 @@
                 <th scope="col">Título</th>
                 <th scope="col">ISBN</th>
                 <th scope="col">Precio</th>
+                <th scope="col">Stock</th>
                 <th scope="col">Editorial</th>
                 <th scope="col">Género</th>
-                <th scope="col">Autores</th>
               </tr>
             </thead>
             <tbody id="libros-cuerpo"></tbody>
@@ -177,7 +203,7 @@
         <form id="form-cliente" class="card form-alta" novalidate>
           <div class="form-campo">
             <label class="form-campo__label" for="cliente-nombre">Nombre completo</label>
-            <input id="cliente-nombre" class="input" name="nombreCompleto" type="text" autocomplete="off" />
+            <input id="cliente-nombre" class="input" name="nombre" type="text" maxlength="120" autocomplete="off" />
           </div>
 
           <div class="form-campo">
@@ -192,12 +218,12 @@
               aria-describedby="cliente-email-ayuda"
             />
             <p id="cliente-email-ayuda" class="help">
-              Al comparar se ignoran espacios y mayúsculas.
+              Debe ser único: el servidor lo guarda en minúsculas.
             </p>
           </div>
 
           <div class="form-acciones campo-ancho">
-            <button class="button button--primary" type="submit">Agregar cliente</button>
+            <button id="cliente-enviar" class="button button--primary" type="submit">Agregar cliente</button>
             <button class="button button--secondary" type="reset">Limpiar formulario</button>
           </div>
         </form>
@@ -205,9 +231,28 @@
         <div id="clientes-errores" class="message message--warning" role="alert"></div>
         <p id="clientes-mensaje" class="message" role="status"></p>
 
+        <form id="form-buscar-cliente" class="card search" novalidate>
+          <label class="search__label" for="cliente-buscar-id">Buscar cliente por ID</label>
+          <div class="search__controls">
+            <input
+              id="cliente-buscar-id"
+              class="input"
+              type="number"
+              inputmode="numeric"
+              min="1"
+              step="1"
+              autocomplete="off"
+              placeholder="Ej.: 1"
+              aria-describedby="cliente-buscar-resultado"
+            />
+            <button id="cliente-buscar-boton" class="button button--secondary" type="submit">Buscar cliente</button>
+          </div>
+          <p id="cliente-buscar-resultado" class="message" role="status" aria-live="polite"></p>
+        </form>
+
         <h2 id="clientes-listado-titulo" class="listado-titulo">Clientes cargados</h2>
         <p id="clientes-vacio" class="message message--info" hidden>
-          Todavía no hay clientes en la lista. Dá de alta el primero con el formulario de arriba.
+          Todavía no hay clientes registrados. Dá de alta el primero con el formulario de arriba.
         </p>
         <div class="table-wrap">
           <table class="table" aria-labelledby="clientes-listado-titulo">
