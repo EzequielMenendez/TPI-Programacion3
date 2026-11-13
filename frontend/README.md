@@ -456,3 +456,20 @@ contra listas locales.
 **Pruebas.** `node --test tests/*.test.cjs` desde `frontend/` (Node 20 o
 superior, sin dependencias). `coordinacion.test.cjs` cubre el flujo de altas
 con un `fetch` simulado: contrato enviado, 201, 409, 422 y sin conexión.
+
+## Global · Ejercicio 3 · Registrar y consultar ventas
+
+Las secciones **Ventas** (`#ventas`) e **Historial** (`#historial`) (`js/ventas-modelo.js` y `js/ventas.js`) consumen la API a través de `js/api.js` (`apiFetch`) y solo mantienen en memoria el borrador de la venta en curso:
+
+| Acción | Petición |
+| --- | --- |
+| Cargar opciones de clientes y libros | `GET /clientes/?limit=100&offset=0` y `GET /libros/?limit=100&offset=0` |
+| Confirmar una venta | `POST /ventas/` con `{ cliente_id, renglones: [{ libro_id, cantidad }] }` |
+| Consultar historial paginado | `GET /ventas/?limit={1..100}&offset={0..}` |
+| Abrir el detalle de una venta | `GET /ventas/{id}` |
+
+- **Armado del borrador**: permite elegir un cliente, agregar libros del catálogo con cantidades enteras entre `1` y `10000`, modificar la cantidad de cualquier renglón o quitarlo. Exige al menos un renglón y un único renglón por libro. Al recibir `clientes-actualizados` o `libros-actualizados` refresca las opciones de los selectores sin vaciar ni alterar el borrador en curso (`RN-UI-04`).
+- **Envío y confirmación (`201 Created`)**: `construirCuerpoVenta(borrador)` envía únicamente `cliente_id` y `renglones` (`[{ libro_id, cantidad }]`), sin precios ni totales (`extra="forbid"`). Mientras se procesa la petición, `#venta-confirmar` permanece deshabilitado. Con el `201` muestra en `#ventas-mensaje` (`role="status"`) el número de venta, los precios unitarios copiados del catálogo, los subtotales y el total devueltos por la API, limpia el borrador, abre el detalle de la venta, recarga el historial y emite `ventas-actualizadas` para refrescar el stock en Catálogo y Libros.
+- **Errores (`409` y `422`) y conservación del borrador**: si el cliente o el libro dejó de existir, no alcanza el stock (`409 Conflict`) o el cuerpo es inválido (`422`), se muestran los mensajes del servidor en `#ventas-errores` (`role="alert"`) y se conserva intacto el borrador para corregirlo (`RN-UI-01`).
+- **Historial y precios históricos inmutables**: `#historial` pagina con `limit` y `offset` (`GET /ventas/`) y cada fila permite abrir `GET /ventas/{id}` en `#historial-detalle`, mostrando fecha, cliente (`nombre` y `email`), renglones e importes históricos (`precio_unitario`, `subtotal`, `total`). Un cambio posterior en el precio de un libro (`PATCH /libros/{id}`) no modifica los importes de las ventas ya registradas (`ventas-api.test.cjs`).
+

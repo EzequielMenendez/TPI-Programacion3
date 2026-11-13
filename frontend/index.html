@@ -297,10 +297,10 @@
       </section>
       <section id="ventas" aria-labelledby="ventas-titulo">
         <div class="section-heading">
-          <p class="eyebrow">Ejercicio 5 · Simulación académica</p>
+          <p class="eyebrow">Registro de ventas</p>
           <h1 id="ventas-titulo">Ventas</h1>
         </div>
-        <p class="message message--info">Las altas y ventas se guardan localmente en este navegador y perfil.</p>
+        <p class="message message--info">El servidor copia los precios unitarios del catálogo, descuenta el stock y calcula el total al confirmar.</p>
         <form id="form-venta" class="card form-alta" novalidate>
           <div class="form-campo campo-ancho">
             <label class="form-campo__label" for="venta-cliente">Cliente</label>
@@ -312,7 +312,7 @@
           </div>
           <div class="form-campo">
             <label class="form-campo__label" for="venta-cantidad">Cantidad</label>
-            <input id="venta-cantidad" class="input" type="number" min="1" step="1" value="1" inputmode="numeric" aria-describedby="venta-ayuda ventas-errores" />
+            <input id="venta-cantidad" class="input" type="number" min="1" max="10000" step="1" value="1" inputmode="numeric" aria-describedby="venta-ayuda ventas-errores" />
           </div>
           <p id="venta-ayuda" class="help campo-ancho">Usá cantidades enteras mayores que cero. Si el libro ya está agregado, modificá la cantidad en su renglón.</p>
           <div class="form-acciones campo-ancho">
@@ -330,7 +330,7 @@
             <p class="venta-total">Total: <output id="venta-total">$ 0,00</output></p>
           </div>
           <div class="form-acciones campo-ancho">
-            <button id="venta-confirmar" class="button button--primary" type="submit">Confirmar venta simulada</button>
+            <button id="venta-confirmar" class="button button--primary" type="submit">Confirmar venta</button>
           </div>
         </form>
         <div id="ventas-errores" class="message message--warning" role="alert" tabindex="-1"></div>
@@ -342,7 +342,28 @@
           <p class="eyebrow">Ventas confirmadas · Sólo consulta</p>
           <h1 id="historial-titulo">Historial</h1>
         </div>
-        <p id="historial-vacio" class="message message--info">Todavía no hay ventas confirmadas guardadas localmente.</p>
+        <div class="catalogo-paginacion" aria-label="Paginación del historial de ventas">
+          <div class="catalogo-paginacion__limite">
+            <label class="form-campo__label" for="historial-limit">Ventas por página</label>
+            <select id="historial-limit" class="input catalogo-limit" name="limit">
+              <option value="5">5</option>
+              <option value="20" selected>20</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+          <div class="catalogo-paginacion__controles">
+            <button id="historial-anterior" class="button button--secondary" type="button" disabled>
+              Página anterior
+            </button>
+            <span id="historial-pagina" class="catalogo-pagina" aria-live="polite">Página 1 (desde 0)</span>
+            <button id="historial-siguiente" class="button button--secondary" type="button" disabled>
+              Página siguiente
+            </button>
+          </div>
+        </div>
+        <div id="historial-errores" class="message message--warning" role="alert"></div>
+        <p id="historial-vacio" class="message message--info">Todavía no hay ventas confirmadas registradas en la base.</p>
         <div class="table-wrap">
           <table class="table" aria-labelledby="historial-titulo">
             <thead><tr><th scope="col">Id</th><th scope="col">Fecha</th><th scope="col">Cliente</th><th scope="col">Total</th><th scope="col">Consulta</th></tr></thead>

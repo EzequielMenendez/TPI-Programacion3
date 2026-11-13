@@ -84,3 +84,57 @@ test('2.2: snapshot independiente y dos ids distintos', () => {
   assert.equal(run('hs[1].id'), 'VE-2');
   assert.equal(run('hs[1].totalCentavos'), 29700);
 });
+
+test('Global E3: calcularVenta y validarBorradorVenta aceptan ids enteros y precios decimales en texto de la API', () => {
+  const run = contexto();
+  run('var librosApi=[{id:1,titulo:"Rayuela",isbn:"978-950-07-1234-5",precio:"18500.50",stock:5},{id:2,titulo:"Ficciones",isbn:"978-950-07-9999-9",precio:"12000.00",stock:3}]');
+  run('var clientesApi=[{id:10,nombre:"Ana Gómez",email:"ana@ejemplo.com"}]');
+  run('var bApi={clienteId:"10",renglones:[{libroId:"1",cantidad:"2"},{libroId:2,cantidad:1}]}');
+
+  const validacion = run('validarBorradorVenta(bApi, librosApi, clientesApi)');
+  assert.equal(validacion.errores.length, 0);
+  assert.equal(validacion.totalCentavos, 4900100);
+
+  const cuerpo = JSON.parse(run('JSON.stringify(construirCuerpoVenta(bApi))'));
+  assert.deepEqual(cuerpo, {
+    cliente_id: 10,
+    renglones: [
+      { libro_id: 1, cantidad: 2 },
+      { libro_id: 2, cantidad: 1 },
+    ],
+  });
+  assert.deepEqual(Object.keys(cuerpo), ['cliente_id', 'renglones']);
+  assert.deepEqual(Object.keys(cuerpo.renglones[0]), ['libro_id', 'cantidad']);
+});
+
+test('Global E3: validarBorradorVenta rechaza cliente vacío, sin renglones, libro repetido o cantidad > 10000 sin alterar el borrador', () => {
+  const run = contexto();
+  run('var librosApi=[{id:1,titulo:"Rayuela",isbn:"978-950-07-1234-5",precio:"18500.00",stock:5}]');
+  run('var clientesApi=[{id:10,nombre:"Ana Gómez",email:"ana@ejemplo.com"}]');
+
+  assert.ok(run('validarBorradorVenta({clienteId:"",renglones:[{libroId:1,cantidad:1}]}, librosApi, clientesApi).errores.length') > 0);
+  assert.ok(run('validarBorradorVenta({clienteId:"10",renglones:[]}, librosApi, clientesApi).errores.length') > 0);
+  assert.ok(run('validarBorradorVenta({clienteId:"10",renglones:[{libroId:1,cantidad:10001}]}, librosApi, clientesApi).errores.length') > 0);
+  assert.ok(run('validarBorradorVenta({clienteId:"10",renglones:[{libroId:1,cantidad:1},{libroId:"1",cantidad:2}]}, librosApi, clientesApi).errores.length') > 0);
+});
+
+test('Global E3: describirConfirmacionVenta incluye id, cliente, precios unitarios copiados del catálogo, subtotales y total', () => {
+  const run = contexto();
+  const texto = run(`describirConfirmacionVenta({
+    id: 7,
+    fecha: "2026-11-13T18:30:00Z",
+    total: "49001.00",
+    cliente: { id: 10, nombre: "Ana Gómez", email: "ana@ejemplo.com" },
+    renglones: [
+      { libro_id: 1, titulo: "Rayuela", cantidad: 2, precio_unitario: "18500.50", subtotal: "37001.00" },
+      { libro_id: 2, titulo: "Ficciones", cantidad: 1, precio_unitario: "12000.00", subtotal: "12000.00" }
+    ]
+  })`);
+  assert.match(texto, /Venta #7/);
+  assert.match(texto, /Ana Gómez/);
+  assert.match(texto, /Rayuela/);
+  assert.match(texto, /18\.500,50/);
+  assert.match(texto, /37\.001,00/);
+  assert.match(texto, /49\.001,00/);
+});
+

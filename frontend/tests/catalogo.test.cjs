@@ -277,4 +277,9 @@ test('E1 (2.3 y 3.1): consulta GET /libros/{id} para ver autores ordenados y rec
   await env.listenersDocumento['libros-actualizados']?.({ detail: { libro: LIBROS_API[0] } });
   assert.equal(env.peticiones.length, cantidadAntes + 1);
   assert.equal(env.peticiones.at(-1).url, '/api/libros/?limit=20&offset=0');
+
+  // Evento ventas-actualizadas también refresca el catálogo para reflejar el nuevo stock.
+  assert.ok(env.listenersDocumento['ventas-actualizadas'], 'El catálogo debe escuchar ventas-actualizadas');
+  await env.listenersDocumento['ventas-actualizadas']({ detail: { venta: { id: 1 } } });
+  assert.equal(env.peticiones.length, cantidadAntes + 2);
 });

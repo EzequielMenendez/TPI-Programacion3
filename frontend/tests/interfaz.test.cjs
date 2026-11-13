@@ -29,6 +29,17 @@ test('Global E1: controles de paginación del catálogo etiquetados y accesibles
   assert.match(html, /id="catalogo-siguiente"[^>]*type="button"/);
   assert.match(html, /id="catalogo-pagina"[^>]*aria-live="polite"/);
 });
+test('Global E3: controles de ventas e historial paginado contra la API', () => {
+  const html = fs.readFileSync(path.join(raiz, 'index.html'), 'utf8');
+  assert.doesNotMatch(html, /guardan localmente|guardadas localmente|venta simulada/i);
+  assert.match(html, /id="venta-confirmar"[^>]*>Confirmar venta<\/button>/);
+  assert.match(html, /for="historial-limit"/);
+  assert.match(html, /id="historial-limit"/);
+  assert.match(html, /id="historial-anterior"[^>]*type="button"/);
+  assert.match(html, /id="historial-siguiente"[^>]*type="button"/);
+  assert.match(html, /id="historial-pagina"[^>]*aria-live="polite"/);
+  assert.match(html, /id="historial-errores"[^>]*role="alert"/);
+});
 test('3.1: scripts clásicos locales, sin inyección de HTML ni almacenamiento', () => {
   const html = fs.readFileSync(path.join(raiz, 'index.html'), 'utf8');
   assert.match(html, /src="js\/ventas-modelo.js" defer/);

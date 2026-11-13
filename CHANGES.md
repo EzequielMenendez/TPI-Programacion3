@@ -118,7 +118,7 @@ Paso │ Agente A (Frontend Core)         │ Agente B (DevOps / Docker)       �
 ## FASE 3 — Ventas Transaccionales, Historial y Precios Inmutables (Ejercicio 3)
 
 ### [C-03] `frontend-ventas-historial`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado (`openspec/changes/archive/2026-11-13-frontend-ventas-historial/`)
 - **Scope**: Confección transaccional de ventas multirrenglón, control de stock, preservación de borradores ante conflicto, consulta de historial y auditoría de precios históricos congelados (Ejercicio 3 · Casos G-05, G-06, G-07)
   - Adaptación de `frontend/js/ventas-modelo.js` y `frontend/js/ventas.js` a las entidades de la API con IDs enteros (`cliente_id: int`, `libro_id: int`, resolviendo `IN-01`). Poblado dinámico de selectores de clientes y libros desde la API.
   - Armado de borrador multirrenglón: adición de libros con cantidades enteras (`cantidad >= 1`), validación estricta de libro único por venta (`RN-VEN-02`), modificación interactiva de cantidades y eliminación de renglones antes de confirmar.

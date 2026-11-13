@@ -457,6 +457,8 @@ async function iniciarAltaLibros() {
     document.getElementById("libro-titulo").focus();
   });
 
+  document.addEventListener("ventas-actualizadas", () => cargarTablaLibros());
+
   const [erroresOpciones, erroresTabla] = await Promise.all([cargarOpcionesLibro(), cargarTablaLibros()]);
   const erroresCarga = [...erroresOpciones, ...erroresTabla];
   if (erroresCarga.length > 0) {

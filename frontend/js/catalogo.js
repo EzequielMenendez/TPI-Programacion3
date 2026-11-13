@@ -409,6 +409,7 @@ async function iniciarCatalogo() {
   }
 
   document.addEventListener("libros-actualizados", () => cargarCatalogo());
+  document.addEventListener("ventas-actualizadas", () => cargarCatalogo());
 
   await cargarCatalogo();
 }
