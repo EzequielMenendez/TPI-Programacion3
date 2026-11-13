@@ -20,6 +20,15 @@ test('3.1: contrato HTML de navegación, controles etiquetados y mensajes E5', (
   assert.match(html, /id="historial-vacio"/);
   assert.match(html, /id="historial-detalle"/);
 });
+test('Global E1: controles de paginación del catálogo etiquetados y accesibles', () => {
+  const html = fs.readFileSync(path.join(raiz, 'index.html'), 'utf8');
+  assert.match(html, /for="catalogo-limit"/);
+  assert.match(html, /id="catalogo-limit"/);
+  assert.match(html, /<option value="20" selected>20<\/option>/);
+  assert.match(html, /id="catalogo-anterior"[^>]*type="button"/);
+  assert.match(html, /id="catalogo-siguiente"[^>]*type="button"/);
+  assert.match(html, /id="catalogo-pagina"[^>]*aria-live="polite"/);
+});
 test('3.1: scripts clásicos locales, sin inyección de HTML ni almacenamiento', () => {
   const html = fs.readFileSync(path.join(raiz, 'index.html'), 'utf8');
   assert.match(html, /src="js\/ventas-modelo.js" defer/);

@@ -65,6 +65,28 @@
           </p>
         </form>
 
+        <div class="catalogo-paginacion" aria-label="Paginación del catálogo">
+          <div class="catalogo-paginacion__limite">
+            <label class="form-campo__label" for="catalogo-limit">Libros por página</label>
+            <select id="catalogo-limit" class="input catalogo-limit" name="limit">
+              <option value="2">2</option>
+              <option value="5">5</option>
+              <option value="20" selected>20</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+          <div class="catalogo-paginacion__controles">
+            <button id="catalogo-anterior" class="button button--secondary" type="button" disabled>
+              Página anterior
+            </button>
+            <span id="catalogo-pagina" class="catalogo-pagina" aria-live="polite">Página 1 (desde 0)</span>
+            <button id="catalogo-siguiente" class="button button--secondary" type="button" disabled>
+              Página siguiente
+            </button>
+          </div>
+        </div>
+
         <p id="catalogo-mensaje" class="message" role="status" aria-live="polite"></p>
 
         <ul id="catalogo-lista" class="book-grid" aria-label="Libros del catálogo"></ul>

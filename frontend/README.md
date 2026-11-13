@@ -387,6 +387,32 @@ consigna** (modificar sólo el precio del catálogo persistido y recargar). La
 comprobación guiada por el docente en una copia del proyecto sigue siendo
 parte de la entrega; el comportamiento observado coincide con lo pedido.
 
+## Global · Ejercicio 1 · Catálogo y cliente HTTP
+
+El cliente HTTP centralizado vive en `js/api.js` (`apiFetch`), usa `/api` como
+prefijo público y conserva la barra final en las rutas de colección
+(`/api/libros/`).
+
+La sección **Catálogo** (`js/catalogo.js`) consulta la API en lugar del array
+local:
+
+| Acción | Petición |
+| --- | --- |
+| Listado y búsqueda parcial por título | `GET /libros/?limit={1..100}&offset={0..}&titulo={texto}` |
+| Ver autores (y stock vigente) de un libro | `GET /libros/{id}` |
+
+- **Paginación y filtro**: envía `limit` (por defecto `20`, configurable entre
+  `1` y `100`) y `offset` (desde `0`). Al cambiar el filtro de título, limpiar
+  la búsqueda o cambiar el límite por página, `offset` se reinicia en `0`.
+- **Datos de cada tarjeta**: título, ISBN, precio formateado en ARS, editorial,
+  género (`«Sin clasificar»` cuando `genero` es `null`) y botón **«Ver
+  autores»** que consulta `GET /libros/{id}` y muestra las autorías ordenadas
+  por `orden` con su `rol`.
+- **Estados diferenciados**: `#catalogo-mensaje` distingue carga en curso,
+  catálogo vacío, búsqueda sin coincidencias y error de conexión. Además,
+  escucha el evento `libros-actualizados` para refrescar el listado tras un alta
+  en `#libros`.
+
 ## Global · Ejercicio 2 · Alta de libros y clientes contra la API
 
 Las secciones **Libros** y **Clientes** ya no usan los datos locales: leen y

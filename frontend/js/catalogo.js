@@ -1,18 +1,23 @@
 /*
- * Catálogo y filtro por título (Ejercicio 3).
+ * Catálogo y cliente HTTP (Global · Ejercicio 1 · change C-01).
  *
  * Responsabilidades:
- *   - Consultas: buscar editorial, género y autores por id.
- *   - Validación de datos: comprobar que las relaciones de cada libro existan.
- *   - Filtro: normalizar la búsqueda y quedarse con los libros que coinciden.
- *   - Renderizado: crear las tarjetas del catálogo y los mensajes de estado.
- *   - Eventos: conectar el buscador con el filtro.
+ *   - Cargar GET /libros/ mediante apiFetch con titulo (búsqueda parcial sin
+ *     distinguir mayúsculas), limit (1 a 100, por defecto 20) y offset (desde 0).
+ *   - Reiniciar el desplazamiento (offset = 0) al cambiar el filtro o el límite.
+ *   - Mostrar título, ISBN, precio, editorial y género («Sin clasificar» cuando
+ *     es nulo).
+ *   - Consultar GET /libros/{id} para ver los autores con su rol y orden.
+ *   - Diferenciar carga, lista vacía, búsqueda sin coincidencias y error de
+ *     conexión.
  *
- * Todo texto se inserta con textContent, nunca con innerHTML, para que lo que
- * escribe el usuario (y los datos) se muestren como texto.
+ * Todo texto se inserta con textContent, nunca con innerHTML.
  */
 
 const SIN_CLASIFICAR = "Sin clasificar";
+const LIMITE_CATALOGO_DEFECTO = 20;
+const LIMITE_CATALOGO_MIN = 1;
+const LIMITE_CATALOGO_MAX = 100;
 
 const formatoPrecio = new Intl.NumberFormat("es-AR", {
   style: "currency",
@@ -21,7 +26,15 @@ const formatoPrecio = new Intl.NumberFormat("es-AR", {
   maximumFractionDigits: 2,
 });
 
-/* ---------- Consultas sobre los datos locales ---------- */
+const estadoCatalogo = {
+  titulo: "",
+  limit: LIMITE_CATALOGO_DEFECTO,
+  offset: 0,
+};
+
+let secuenciaCatalogo = 0;
+
+/* ---------- Consultas y validaciones locales heredadas (E3 / baseline) ---------- */
 
 function buscarPorId(lista, id) {
   return lista.find((item) => item.id === id) ?? null;
@@ -39,12 +52,6 @@ function obtenerAutores(libro) {
   return libro.autorIds.map((id) => buscarPorId(AUTORES, id)).filter(Boolean);
 }
 
-/* ---------- Validación de las relaciones iniciales ---------- */
-
-/**
- * Devuelve una lista de problemas encontrados en las relaciones de los libros.
- * Una lista vacía significa que los datos son coherentes.
- */
 function validarRelacionesLibros(libros) {
   const problemas = [];
 
@@ -67,17 +74,11 @@ function validarRelacionesLibros(libros) {
   return problemas;
 }
 
-/* ---------- Filtro por título ---------- */
-
 /** Quita espacios en los extremos y pasa a minúsculas. */
 function normalizarBusqueda(texto) {
-  return texto.trim().toLocaleLowerCase("es");
+  return String(texto ?? "").trim().toLocaleLowerCase("es");
 }
 
-/**
- * Filtra por coincidencia parcial del título, sin distinguir mayúsculas.
- * Una búsqueda vacía (o solo espacios) devuelve todo el catálogo.
- */
 function filtrarPorTitulo(libros, busqueda) {
   const termino = normalizarBusqueda(busqueda);
   if (termino === "") {
@@ -88,7 +89,53 @@ function filtrarPorTitulo(libros, busqueda) {
   );
 }
 
-/* ---------- Renderizado ---------- */
+/* ---------- Parámetros de paginación y filtro para GET /libros/ ---------- */
+
+/** Normaliza el límite entre 1 y 100 (por defecto 20). */
+function normalizarLimiteCatalogo(valor) {
+  const numero = Number(String(valor ?? "").trim());
+  if (!Number.isInteger(numero) || numero < LIMITE_CATALOGO_MIN || numero > LIMITE_CATALOGO_MAX) {
+    return LIMITE_CATALOGO_DEFECTO;
+  }
+  return numero;
+}
+
+/** Normaliza el offset como entero desde 0. */
+function normalizarOffsetCatalogo(valor) {
+  const numero = Number(valor);
+  if (!Number.isInteger(numero) || numero < 0) {
+    return 0;
+  }
+  return numero;
+}
+
+/**
+ * Arma los query params de GET /libros/: limit (1..100, por defecto 20),
+ * offset (desde 0) y titulo cuando la búsqueda recortada no está vacía.
+ */
+function construirParametrosCatalogo(estado = {}) {
+  const parametros = {
+    limit: normalizarLimiteCatalogo(estado.limit),
+    offset: normalizarOffsetCatalogo(estado.offset),
+  };
+  const titulo = String(estado.titulo ?? "").trim();
+  if (titulo !== "") {
+    parametros.titulo = titulo;
+  }
+  return parametros;
+}
+
+function formatearAutoresDetalle(autores) {
+  if (!Array.isArray(autores) || autores.length === 0) {
+    return "Sin autores registrados";
+  }
+  return [...autores]
+    .sort((a, b) => a.orden - b.orden)
+    .map((autoria) => `${autoria.nombre} (${autoria.rol})`)
+    .join(", ");
+}
+
+/* ---------- Renderizado de tarjetas y estados ---------- */
 
 function crearDato(etiqueta, valor) {
   const contenedor = document.createElement("div");
@@ -103,101 +150,267 @@ function crearDato(etiqueta, valor) {
   return contenedor;
 }
 
-function crearTarjetaLibro(libro) {
-  const editorial = obtenerEditorial(libro);
-  const genero = obtenerGenero(libro);
-  const autores = obtenerAutores(libro);
+/**
+ * Consulta GET /libros/{id} para mostrar los autores (y el stock) del libro.
+ */
+async function consultarDetalleLibro(libroId, ddAutores, ddStock, boton) {
+  boton.disabled = true;
+  ddAutores.textContent = "Cargando autores…";
+  try {
+    const { datos } = await apiFetch(`/libros/${libroId}`);
+    ddAutores.textContent = formatearAutoresDetalle(datos.autores);
+    ddStock.textContent = `${datos.stock} ${datos.stock === 1 ? "unidad" : "unidades"}`;
+    boton.textContent = "Actualizar autores";
+  } catch (error) {
+    ddAutores.textContent = mensajesDeError(error).join(" ");
+    boton.textContent = "Reintentar autores";
+  } finally {
+    boton.disabled = false;
+  }
+}
+
+/**
+ * Crea una tarjeta del catálogo a partir de un LibroListado devuelto por GET /libros/.
+ * Muestra título, ISBN, precio, editorial y género («Sin clasificar» si es nulo),
+ * y permite consultar GET /libros/{id} para ver los autores.
+ */
+function crearTarjetaLibroApi(libro) {
+  const nombreEditorial = libro.editorial && libro.editorial.nombre
+    ? libro.editorial.nombre
+    : "Editorial desconocida";
+  const nombreGenero = libro.genero && libro.genero.nombre
+    ? libro.genero.nombre
+    : SIN_CLASIFICAR;
 
   const item = document.createElement("li");
   const tarjeta = document.createElement("article");
   tarjeta.className = "card book-card";
+  tarjeta.dataset.libroId = String(libro.id);
 
   const etiquetaGenero = document.createElement("p");
-  etiquetaGenero.className = genero ? "tag" : "tag tag--muted";
-  etiquetaGenero.textContent = genero ? genero.nombre : SIN_CLASIFICAR;
+  etiquetaGenero.className = libro.genero ? "tag" : "tag tag--muted";
+  etiquetaGenero.textContent = nombreGenero;
 
   const titulo = document.createElement("h3");
   titulo.className = "book-card__title";
   titulo.textContent = libro.titulo;
 
+  const filaAutores = crearDato(
+    "Autores",
+    Array.isArray(libro.autores) && libro.autores.length > 0
+      ? formatearAutoresDetalle(libro.autores)
+      : "Consultá el detalle para ver los autores"
+  );
+  const ddAutores = filaAutores.hijos ? filaAutores.hijos[1] : filaAutores.lastChild;
+
+  const filaStock = crearDato(
+    "Stock",
+    typeof libro.stock === "number"
+      ? `${libro.stock} ${libro.stock === 1 ? "unidad" : "unidades"}`
+      : "—"
+  );
+  const ddStock = filaStock.hijos ? filaStock.hijos[1] : filaStock.lastChild;
+
   const datos = document.createElement("dl");
   datos.className = "book-card__data";
   datos.append(
     crearDato("ISBN", libro.isbn),
-    crearDato("Editorial", editorial ? editorial.nombre : "Editorial desconocida"),
-    crearDato("Género", genero ? genero.nombre : SIN_CLASIFICAR),
-    crearDato("Autores", autores.map((autor) => autor.nombre).join(", "))
+    crearDato("Editorial", nombreEditorial),
+    crearDato("Género", nombreGenero),
+    filaStock,
+    filaAutores
   );
 
   const precio = document.createElement("p");
   precio.className = "book-card__price";
-  precio.textContent = formatoPrecio.format(libro.precio);
+  precio.textContent = formatoPrecio.format(Number(libro.precio));
 
-  tarjeta.append(etiquetaGenero, titulo, datos, precio);
+  const acciones = document.createElement("div");
+  acciones.className = "book-card__actions";
+  const botonAutores = document.createElement("button");
+  botonAutores.type = "button";
+  botonAutores.className = "button button--secondary";
+  botonAutores.dataset.libroId = String(libro.id);
+  botonAutores.textContent = "Ver autores";
+  botonAutores.addEventListener("click", () =>
+    consultarDetalleLibro(libro.id, ddAutores, ddStock, botonAutores)
+  );
+  acciones.append(botonAutores);
+
+  tarjeta.append(etiquetaGenero, titulo, datos, precio, acciones);
   item.append(tarjeta);
   return item;
 }
 
+function mostrarEstadoCatalogo(mensajeElemento, texto, tono) {
+  mensajeElemento.classList.remove("message--info", "message--warning");
+  mensajeElemento.textContent = texto;
+  if (tono) {
+    mensajeElemento.classList.add(tono);
+  }
+}
+
+function actualizarControlesPaginacion(elementos, cantidadRecibida, cargando = false) {
+  const { botonAnterior, botonSiguiente, etiquetaPagina } = elementos;
+  const pagina = Math.floor(estadoCatalogo.offset / estadoCatalogo.limit) + 1;
+  if (etiquetaPagina) {
+    etiquetaPagina.textContent = `Página ${pagina} (offset ${estadoCatalogo.offset})`;
+  }
+  if (botonAnterior) {
+    botonAnterior.disabled = cargando || estadoCatalogo.offset <= 0;
+  }
+  if (botonSiguiente) {
+    botonSiguiente.disabled = cargando || cantidadRecibida < estadoCatalogo.limit;
+  }
+}
+
 /**
- * Dibuja la lista de libros y actualiza el mensaje de estado.
- * Distingue tres casos: catálogo vacío, búsqueda sin resultados y resultados.
+ * Renderiza la página de libros recibida de GET /libros/ y diferencia entre
+ * lista vacía, búsqueda sin coincidencias y resultados.
  */
-function renderizarCatalogo(libros, busqueda, elementos) {
+function renderizarCatalogoApi(libros, elementos) {
   const { lista, mensaje } = elementos;
-  const termino = busqueda.trim();
+  const termino = estadoCatalogo.titulo.trim();
 
-  lista.replaceChildren(...libros.map(crearTarjetaLibro));
+  lista.replaceChildren(...libros.map(crearTarjetaLibroApi));
+  actualizarControlesPaginacion(elementos, libros.length, false);
 
-  mensaje.classList.remove("message--info", "message--warning");
-
-  if (LIBROS.length === 0) {
-    mensaje.textContent = "Todavía no hay libros cargados en el catálogo.";
-    mensaje.classList.add("message--info");
+  if (libros.length === 0 && termino !== "") {
+    mostrarEstadoCatalogo(
+      mensaje,
+      `Sin resultados: ningún título contiene «${termino}». Probá con otra palabra o borrá la búsqueda.`,
+      "message--warning"
+    );
+  } else if (libros.length === 0 && estadoCatalogo.offset === 0) {
+    mostrarEstadoCatalogo(
+      mensaje,
+      "Todavía no hay libros cargados en el catálogo.",
+      "message--info"
+    );
   } else if (libros.length === 0) {
-    mensaje.textContent = `Sin resultados: ningún título contiene «${termino}». Probá con otra palabra o borrá la búsqueda.`;
-    mensaje.classList.add("message--warning");
+    mostrarEstadoCatalogo(
+      mensaje,
+      "No hay más libros en esta página. Volvé a la página anterior.",
+      "message--info"
+    );
   } else if (termino === "") {
-    mensaje.textContent = `Mostrando los ${libros.length} libros del catálogo.`;
+    const plural = libros.length === 1 ? "libro mostrado" : "libros mostrados";
+    mostrarEstadoCatalogo(
+      mensaje,
+      `Mostrando ${libros.length} ${plural} del catálogo (desde ${estadoCatalogo.offset + 1}).`,
+      null
+    );
   } else {
     const plural = libros.length === 1 ? "libro coincide" : "libros coinciden";
-    mensaje.textContent = `${libros.length} ${plural} con «${termino}».`;
+    mostrarEstadoCatalogo(
+      mensaje,
+      `${libros.length} ${plural} con «${termino}».`,
+      null
+    );
+  }
+}
+
+function obtenerElementosCatalogo() {
+  return {
+    formulario: document.getElementById("buscador-form"),
+    campo: document.getElementById("busqueda-titulo"),
+    botonLimpiar: document.getElementById("limpiar-busqueda"),
+    selectLimite: document.getElementById("catalogo-limit"),
+    botonAnterior: document.getElementById("catalogo-anterior"),
+    botonSiguiente: document.getElementById("catalogo-siguiente"),
+    etiquetaPagina: document.getElementById("catalogo-pagina"),
+    lista: document.getElementById("catalogo-lista"),
+    mensaje: document.getElementById("catalogo-mensaje"),
+  };
+}
+
+/**
+ * Consulta GET /libros/ con el filtro y la paginación actuales, diferenciando
+ * carga, lista vacía, búsqueda sin coincidencias y error de conexión.
+ */
+async function cargarCatalogo() {
+  const elementos = obtenerElementosCatalogo();
+  if (!elementos.lista || !elementos.mensaje) return;
+
+  const pedidoActual = ++secuenciaCatalogo;
+  const parametros = construirParametrosCatalogo(estadoCatalogo);
+
+  mostrarEstadoCatalogo(elementos.mensaje, "Cargando catálogo…", "message--info");
+  actualizarControlesPaginacion(elementos, 0, true);
+
+  try {
+    const { datos: libros } = await apiFetch("/libros/", { parametros });
+    if (pedidoActual !== secuenciaCatalogo) return;
+    renderizarCatalogoApi(Array.isArray(libros) ? libros : [], elementos);
+  } catch (error) {
+    if (pedidoActual !== secuenciaCatalogo) return;
+    elementos.lista.replaceChildren();
+    actualizarControlesPaginacion(elementos, 0, false);
+    mostrarEstadoCatalogo(
+      elementos.mensaje,
+      mensajesDeError(error).join(" "),
+      "message--warning"
+    );
   }
 }
 
 /* ---------- Eventos ---------- */
 
-function iniciarCatalogo() {
-  const elementos = {
-    formulario: document.getElementById("buscador-form"),
-    campo: document.getElementById("busqueda-titulo"),
-    botonLimpiar: document.getElementById("limpiar-busqueda"),
-    lista: document.getElementById("catalogo-lista"),
-    mensaje: document.getElementById("catalogo-mensaje"),
-  };
-
-  const problemas = validarRelacionesLibros(LIBROS);
-  if (problemas.length > 0) {
-    console.warn("Datos iniciales con relaciones inválidas:", problemas);
+async function iniciarCatalogo() {
+  const elementos = obtenerElementosCatalogo();
+  if (!elementos.formulario || !elementos.campo || !elementos.lista || !elementos.mensaje) {
+    return;
   }
 
-  const actualizar = () => {
-    const busqueda = elementos.campo.value;
-    renderizarCatalogo(filtrarPorTitulo(LIBROS, busqueda), busqueda, elementos);
+  estadoCatalogo.titulo = elementos.campo.value.trim();
+  estadoCatalogo.limit = elementos.selectLimite
+    ? normalizarLimiteCatalogo(elementos.selectLimite.value)
+    : LIMITE_CATALOGO_DEFECTO;
+  estadoCatalogo.offset = 0;
+
+  const aplicarFiltro = () => {
+    estadoCatalogo.titulo = elementos.campo.value.trim();
+    estadoCatalogo.offset = 0;
+    return cargarCatalogo();
   };
 
-  // Filtra mientras se escribe; el submit (Enter) no recarga la página.
-  elementos.campo.addEventListener("input", actualizar);
+  elementos.campo.addEventListener("input", aplicarFiltro);
   elementos.formulario.addEventListener("submit", (evento) => {
     evento.preventDefault();
-    actualizar();
+    return aplicarFiltro();
   });
   elementos.botonLimpiar.addEventListener("click", () => {
     elementos.campo.value = "";
-    actualizar();
     elementos.campo.focus();
+    return aplicarFiltro();
   });
 
-  actualizar();
+  if (elementos.selectLimite) {
+    elementos.selectLimite.addEventListener("change", () => {
+      estadoCatalogo.limit = normalizarLimiteCatalogo(elementos.selectLimite.value);
+      estadoCatalogo.offset = 0;
+      return cargarCatalogo();
+    });
+  }
+
+  if (elementos.botonAnterior) {
+    elementos.botonAnterior.addEventListener("click", () => {
+      if (estadoCatalogo.offset <= 0) return;
+      estadoCatalogo.offset = Math.max(0, estadoCatalogo.offset - estadoCatalogo.limit);
+      return cargarCatalogo();
+    });
+  }
+
+  if (elementos.botonSiguiente) {
+    elementos.botonSiguiente.addEventListener("click", () => {
+      estadoCatalogo.offset += estadoCatalogo.limit;
+      return cargarCatalogo();
+    });
+  }
+
+  document.addEventListener("libros-actualizados", () => cargarCatalogo());
+
+  await cargarCatalogo();
 }
 
 document.addEventListener("DOMContentLoaded", iniciarCatalogo);

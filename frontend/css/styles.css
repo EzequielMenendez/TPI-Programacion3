@@ -213,6 +213,39 @@ select:focus-visible {
   color: var(--color-texto-suave);
 }
 
+/* ---------- Paginación del catálogo (Global · Ejercicio 1) ---------- */
+.catalogo-paginacion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espacio-3);
+  margin-bottom: var(--espacio-3);
+}
+
+.catalogo-paginacion__limite,
+.catalogo-paginacion__controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espacio-2);
+}
+
+.catalogo-limit {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.catalogo-pagina {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-texto-suave);
+}
+
+.book-card__actions {
+  margin-top: var(--espacio-2);
+}
+
 .button {
   padding: 0.65rem var(--espacio-3);
   font: inherit;

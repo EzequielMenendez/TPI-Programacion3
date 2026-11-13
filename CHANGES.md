@@ -73,7 +73,7 @@ Paso │ Agente A (Frontend Core)         │ Agente B (DevOps / Docker)       �
 ## FASE 1 — Cliente HTTP, Estructura y Catálogo (Ejercicio 1)
 
 ### [C-01] `frontend-api-client-catalog`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado (`openspec/changes/archive/2026-11-13-frontend-api-client-catalog/`)
 - **Scope**: Reorganización del frontend nativo, cliente HTTP centralizado e integración reactiva del catálogo editorial y detalle de obras (Ejercicio 1 · Caso G-01)
   - Estructuración limpia de recursos estáticos en `frontend/` (`index.html`, `css/styles.css`, `js/`), erradicando la dependencia de `localStorage` para lecturas de catálogo.
   - Implementación de `frontend/js/api.js`: cliente `apiFetch(path, options)` centralizado con prefijo `/api/`, barra final obligatoria en rutas de colección (`/api/libros/`, `/api/editoriales/`, etc., cumpliendo `RN-DEP-01` y evitando redirecciones 307 de FastAPI), parseo homogéneo de JSON y mapeo de errores HTTP (400, 404, 409, 422, 500).
