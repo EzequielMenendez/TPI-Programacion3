@@ -145,7 +145,7 @@ Paso │ Agente A (Frontend Core)         │ Agente B (DevOps / Docker)       �
 > Los changes C-04 y C-05 pueden formularse y desarrollarse en paralelo respetando sus respectivos contextos.
 
 ### [C-04] `frontend-docker-nginx`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado (`openspec/changes/archive/2026-11-14-frontend-docker-nginx/`).
 - **Scope**: Dockerización del frontend con Nginx 1.30-alpine, plantilla de sustitución de entorno y reverse proxy unificado sin CORS (Ejercicio 4)
   - Creación de `frontend/Dockerfile`: imagen oficial `nginx:1.30-alpine`, copia de archivos estáticos (`index.html`, `css/`, `js/`) al directorio `/usr/share/nginx/html/`, copia de la plantilla `default.conf.template` al directorio `/etc/nginx/templates/`, exposición del puerto 80 y comando `nginx -g 'daemon off;'`.
   - Creación de `frontend/default.conf.template`: configuración de servidor escuchando en `:80`, bloque `location /` con `try_files $uri $uri/ /index.html;`, y bloque `location /api/` con directiva `proxy_pass http://${API_UPSTREAM}/;` (barra final obligatoria para sustitución de prefijo `DD-02` y cumplimiento de `RN-DEP-02`), configurando cabeceras `Host`, `X-Real-IP`, `X-Forwarded-For` y `X-Forwarded-Proto`.
