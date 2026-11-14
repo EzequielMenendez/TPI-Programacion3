@@ -1,14 +1,32 @@
 # Guía de Despliegue · Librería Páginas del Sol (Easypanel & Docker)
 
-> Manual operativo para la configuración, puesta en marcha y auditoría de la aplicación en **Easypanel (VPS)** y en **entorno local (Docker Compose)**, conforme a las consignas del Global de Programación III (Ejercicios 4 y 5, Casos G-01 a G-07).
+> Manual operativo para la configuración, puesta en marcha, actualización y auditoría de la aplicación en **Easypanel (VPS)** y en **entorno local (Docker Compose)**, conforme a las consignas del Global de Programación III (Ejercicios 4 y 5, Casos G-01 a G-07).
 
 ---
 
-## 1. Arquitectura y Topología de Red
+## 1. Ficha Técnica del Despliegue
+
+| Parámetro | Configuración / Valor |
+|---|---|
+| **Integrantes del grupo** | Ignacio Rodríguez · Ezequiel Menéndez · Mateo Algañaraz · Nicolás Morón · Santiago Barretto |
+| **Repositorio y rama** | `https://github.com/EzequielMenendez/TPI-Programacion3` (rama `main`) |
+| **URL pública (Easypanel)** | `https://<dominio-easypanel-del-grupo>/` *(completar al publicar en la VPS)* |
+| **Endpoint de salud público** | `https://<dominio-easypanel-del-grupo>/api/health/ready` → `200 OK` |
+| **Build Path Frontend** | `/frontend` (Builder: `Dockerfile`, ruta relativa: `Dockerfile`) |
+| **Build Path Backend** | `/backend` (Builder: `Dockerfile`, ruta relativa: `Dockerfile`) |
+| **Puertos internos** | Frontend (Nginx): `80` (HTTP) · Backend (Uvicorn): `8000` (HTTP) · PostgreSQL: `5432` (privado) |
+| **Regla de Reverse Proxy** | `location /api/ { proxy_pass http://${API_UPSTREAM}/; }` (con barra final para reemplazar `/api/` por `/`) |
+| **Nombres de variables de entorno** | Frontend: `API_UPSTREAM`, `NGINX_ENVSUBST_FILTER` · Backend: `DATABASE_URL`, `SQL_ECHO` · DB: `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` |
+| **Migraciones de esquema** | `alembic upgrade head` (ejecutado automáticamente en el `CMD` de `backend/Dockerfile` al iniciar) |
+| **Carga inicial de datos (`seed`)** | `python -m scripts.seed` (ejecutado desde la pestaña **Shell** del servicio `backend`) |
+
+---
+
+## 2. Arquitectura y Topología de Red
 
 El despliegue se organiza en **tres servicios** dentro de un mismo proyecto en Easypanel o en una red interna de Docker Compose:
 
-```
+```text
                   ┌─────────────────────────────────────────────────────────┐
                   │                 RED PÚBLICA (Internet)                  │
                   └────────────────────────────┬────────────────────────────┘
@@ -48,146 +66,116 @@ El despliegue se organiza en **tres servicios** dentro de un mismo proyecto en E
 
 ---
 
-## 2. Despliegue en Easypanel (Paso a Paso)
+## 3. Despliegue en Easypanel (Paso a Paso)
 
-Crear un proyecto nuevo en la consola de Easypanel (por ejemplo `libreria-grupo`) y configurar los tres servicios:
+Crear un proyecto en la consola de Easypanel (por ejemplo `grupo1`) y configurar los tres servicios:
 
 ### Servicio 1: Base de Datos (`postgres`)
-1. En el proyecto, seleccionar **New Service** → **Postgres** (o Database → PostgreSQL).
-2. Asignar el nombre del servicio: `postgres` (o `db`).
-3. En **Credentials / Environment**, definir las credenciales:
+1. En el proyecto, seleccionar **New Service** → **Postgres**.
+2. Asignar el nombre del servicio: `postgres` (o consultar host y puerto internos en **Credentials**).
+3. En **Credentials / Environment**, definir los nombres de variables (con valores privados en el servidor):
    - `POSTGRES_DB`: `libreria`
    - `POSTGRES_USER`: `libreria_user`
-   - `POSTGRES_PASSWORD`: `<contraseña_segura>`
-4. **Persistencia**: Asegurar el montaje de volumen persistente en `/var/lib/postgresql/data`.
-5. **Seguridad de red**: Mantener el puerto `5432` privado dentro de la red del proyecto (no publicar hacia el exterior).
+   - `POSTGRES_PASSWORD`: `<contraseña_privada>`
+4. **Persistencia**: Asegurar el volumen persistente en `/var/lib/postgresql/data`.
+5. **Seguridad de red**: Mantener el puerto `5432` privado dentro de la red interna (no exponer al exterior).
 
 ### Servicio 2: Backend REST API (`backend`)
 1. Seleccionar **New Service** → **App** y asignarle el nombre `backend`.
-2. En la pestaña **Source**:
-   - Seleccionar el repositorio Git y la rama de entrega (ej. `main`).
+2. En **Source**:
+   - Seleccionar el repositorio Git y la rama `main`.
    - Configurar **Build Path**: `/backend`
-3. En la sección **Build**:
-   - Seleccionar **Dockerfile** como builder.
-   - Configurar la ruta relativa del Dockerfile: `Dockerfile`
-4. En la pestaña **Environment**:
+3. En **Build**:
+   - Seleccionar **Dockerfile** como builder y escribir `Dockerfile` como ruta relativa.
+4. En **Environment**:
    ```env
-   DATABASE_URL=postgresql+asyncpg://libreria_user:<contraseña_segura>@postgres:5432/libreria
+   DATABASE_URL=postgresql+asyncpg://libreria_user:<contraseña_privada>@<host_interno_postgres>:5432/libreria
    SQL_ECHO=false
    ```
-   *(Nota: si el servicio Postgres se llama distinto, ajustar el host en la URL).*
-5. En la sección **Deploy**:
-   - La imagen ejecuta automáticamente `alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000`.
-   - Pulsar **Deploy** y verificar en los logs que las migraciones se apliquen con éxito.
-6. **Carga inicial de datos de prueba**:
-   - Abrir la pestaña **Shell** del servicio `backend` en Easypanel y ejecutar:
+5. En **Deploy**:
+   - Pulsar **Deploy** y revisar los logs de construcción y arranque.
+   - Confirmar en los logs que `alembic upgrade head` se ejecute antes de que Uvicorn escuche en `0.0.0.0:8000`.
+6. **Comprobación de salud y carga inicial desde Shell**:
+   - Abrir la pestaña **Shell** del servicio `backend` y comprobar la salud:
+     ```bash
+     URL=http://127.0.0.1:8000/health/ready
+     python -c "from urllib.request import urlopen; print(urlopen('$URL').status)"
+     ```
+     *(Debe imprimir `200`).*
+   - Ejecutar la carga inicial de datos ficticios:
      ```bash
      python -m scripts.seed
      ```
-   - Comprobar la salud del backend en la misma consola con:
-     ```bash
-     python -c "from urllib.request import urlopen; print(urlopen('http://127.0.0.1:8000/health/ready').status)"
-     ```
-     *(Debe imprimir `200`).*
-7. **Red**: Mantener este servicio en la red interna y remover cualquier dominio público que Easypanel le asigne por defecto.
+     *(Nota: `scripts.seed` vacía las tablas y carga el estado inicial conocido; no ejecutarlo nuevamente si se desean conservar altas y ventas posteriores).*
+7. **Red**: Conservar el `backend` únicamente en la red interna y quitar su dominio público automático si Easypanel le asignó uno.
 
 ### Servicio 3: Frontend y Reverse Proxy (`frontend`)
 1. Seleccionar **New Service** → **App** y asignarle el nombre `frontend`.
-2. En la pestaña **Source**:
-   - Seleccionar el repositorio Git y la rama de entrega (`main`).
+2. En **Source**:
+   - Seleccionar el repositorio Git y la rama `main`.
    - Configurar **Build Path**: `/frontend`
-3. En la sección **Build**:
-   - Seleccionar **Dockerfile** como builder.
-   - Ruta relativa del Dockerfile: `Dockerfile`
-4. En la pestaña **Environment**:
-   ```env
-   API_UPSTREAM=backend:8000
-   NGINX_ENVSUBST_FILTER=^API_UPSTREAM$
-   ```
-5. En la pestaña **Domains**:
-   - Configurar el dominio HTTPS asignado (ej. `https://libreria.tudominio.com`).
-   - Protocolo interno: **HTTP**.
-   - Puerto de destino interno: **80**.
-6. Pulsar **Deploy**.
-   - Verificar accediendo a `https://<dominio-publico>/api/health/ready` (debe responder `200 OK`).
-   - Abrir `https://<dominio-publico>/` en el navegador: el catálogo debe renderizar los datos iniciales sin errores de CORS.
+3. En **Build**:
+   - Seleccionar **Dockerfile** como builder y `Dockerfile` como ruta relativa.
+4. En **Environment**:
+   - Configurar `API_UPSTREAM` con el nombre interno del servicio backend y su puerto (`<proyecto>_backend:8000`):
+     ```env
+     API_UPSTREAM=grupo1_backend:8000
+     NGINX_ENVSUBST_FILTER=^API_UPSTREAM$
+     ```
+5. En **Domains**:
+   - Usar el dominio HTTPS asignado al frontend.
+   - Configurar **HTTP** como protocolo interno y **80** como puerto de destino.
+6. Guardar los cambios y pulsar **Deploy**.
+   - Abrir `https://<dominio-publico>/api/health/ready` y verificar que responde `200`.
+   - Abrir `https://<dominio-publico>/` y probar el catálogo y el registro de una venta.
+
+### Pasos de Actualización y Redespliegue
+1. Subir los nuevos commits a la rama `main` del repositorio en GitHub (`git push origin main`).
+2. En Easypanel, ingresar al servicio modificado (`backend` y/o `frontend`) y pulsar **Deploy**.
+3. Al iniciar el nuevo contenedor de `backend`, `alembic upgrade head` aplica de forma idempotente cualquier migración pendiente sin borrar los datos existentes en el volumen de PostgreSQL.
+4. No volver a ejecutar `python -m scripts.seed` tras actualizar para preservar las altas y ventas registradas.
+5. Verificar en la URL pública que `/api/health/ready` devuelve `200` y que los libros, clientes y ventas previos siguen disponibles.
 
 ---
 
-## 3. Ejecución Local con Docker Compose
+## 4. Ejecución Local con Docker Compose
 
-Para reproducir localmente la topología completa en un solo comando:
+Para reproducir localmente la topología completa de los 3 servicios:
 
 ```bash
-# 1. Construir las imágenes y levantar los 3 servicios
-docker compose up --build
+# 1. Construir las imágenes y levantar db, backend y frontend
+docker compose up --build -d
 
-# 2. En otra terminal, inicializar la base de datos con los datos semilla
+# 2. Cargar los datos ficticios iniciales
 docker compose exec backend python -m scripts.seed
 
-# 3. Acceder en el navegador
-# Frontend y Proxy unificado: http://localhost
-# Verificación de salud:      http://localhost/api/health/ready
-# Documentación OpenAPI:      http://localhost:8000/docs (o http://localhost/api/docs si se habilita)
-```
-
-Para detener los servicios conservando los datos:
-```bash
-docker compose down
-```
-
-Para reiniciar desde cero eliminando los volúmenes de base de datos:
-```bash
-docker compose down -v
+# 3. Verificar en el navegador
+# Interfaz web:         http://localhost
+# Salud vía proxy:      http://localhost/api/health/ready
+# Documentación API:    http://localhost:8000/docs
 ```
 
 ---
 
-## 4. Guía de Diagnóstico y Resolución de Problemas
+## 5. Guía de Diagnóstico
 
-| Síntoma observado | Causa probable | Verificación y Solución |
+| Si ves esto | Revisá esto |
+|---|---|
+| **Falla un `COPY`** | El Build Path (`/frontend` o `/backend`), los nombres exactos de los archivos y la carpeta `public/`. |
+| **Nginx no arranca o `/api/` devuelve `502`** | Los logs del frontend, `API_UPSTREAM`, el nombre interno del servicio backend, el puerto `8000` y si el backend está en ejecución. |
+| **`/api/health/ready` falla** | Los logs del backend, `DATABASE_URL` (driver `postgresql+asyncpg`), la conexión a PostgreSQL y las migraciones (`alembic upgrade head`). |
+| **Una petición de la API devuelve `404`** | En la pestaña Red del navegador, verificá el prefijo `/api` y la ruta del backend, incluida su barra final cuando corresponda (`/api/libros/`, `/api/ventas/`) y la barra final en `proxy_pass http://${API_UPSTREAM}/;`. |
+
+---
+
+## 6. Casos de Prueba y Verificación (`G-01` a `G-07`)
+
+| Caso | Procedimiento | Resultado esperado |
 |---|---|---|
-| **Falla un `COPY` en el build** | Discrepancia en Build Path | En Easypanel verificar que el Build Path sea `/frontend` o `/backend`. Todos los archivos copiados en Dockerfile deben existir en esa subcarpeta. |
-| **Nginx responde `502 Bad Gateway` en `/api/`** | `API_UPSTREAM` mal configurado o backend caído | Revisar los logs del backend para asegurar que Uvicorn esté escuchando en `0.0.0.0:8000`. Comprobar que `API_UPSTREAM` coincida con el nombre del servicio interno y puerto (`backend:8000`). |
-| **Falla `/api/health/ready` (500)** | Fallo de conexión a PostgreSQL | Revisar los logs del backend. Verificar que `DATABASE_URL` contenga el driver `postgresql+asyncpg://` y las credenciales exactas del servicio Postgres. |
-| **Petición a la API devuelve 404** | Omisión de barra final en proxy o ruta | Revisar que `proxy_pass http://${API_UPSTREAM}/;` tenga la barra final en `default.conf.template`. En el frontend, verificar que las rutas de colección incluyan la barra final obligatoria (ej: `/api/libros/`). |
-| **Errores de CORS en la consola del navegador** | Consumo directo del puerto backend | El frontend debe utilizar rutas relativas con prefijo `/api/` (ej: `/api/libros/`), permitiendo que Nginx atienda todo bajo el mismo origen. |
-
----
-
-## 5. Protocolo de Verificación de Casos Globales (G-01 a G-07)
-
-Ejecutar las siguientes pruebas desde la URL pública desplegada:
-
-### G-01 · Catálogo y búsqueda parcial insensible
-- **Acción**: Ingresar a la URL principal, observar la carga de las obras iniciales. En la caja de búsqueda por título escribir `"RAYU"` (en mayúsculas).
-- **Resultado esperado**: El catálogo filtra insensiblemente a mayúsculas y muestra únicamente *Rayuela*. Al presionar "Mostrar todo el catálogo" o vaciar la búsqueda, se restaura la lista completa.
-- **Red**: Petición `GET /api/libros/?titulo=RAYU` responde `200 OK`.
-
-### G-02 · Alta de libro con autorías y persistencia
-- **Acción**: Ir a la sección de Altas. Completar `#form-libro` con un libro nuevo (título, ISBN único, precio positivo, stock mayor o igual a 0, editorial, género y al menos un autor marcado con su rol). Enviar formulario.
-- **Resultado esperado**: La API responde `201 Created`. El formulario se vacía completamente, se muestra alerta de éxito con el ID asignado y el nuevo libro aparece tanto en la tabla como en el catálogo.
-
-### G-03 · Rechazo de ISBN duplicado y preservación de borrador
-- **Acción**: Intentar dar de alta un libro utilizando un ISBN ya registrado en la base de datos (por ejemplo `978-950-07-0386-1`).
-- **Resultado esperado**: La API rechaza con HTTP `409 Conflict` (`"Ya existe un libro con ese ISBN."`). Se muestra el mensaje de error del servidor y **todos los campos completados permanecen intactos en pantalla** para corregir el ISBN sin reescribir.
-
-### G-04 · Alta de cliente y rechazo de email duplicado
-- **Acción**: Dar de alta un cliente válido con nombre y email. Luego intentar registrar otro cliente con el mismo email (o variando mayúsculas, ej: `ANA@EXAMPLE.COM`).
-- **Resultado esperado**: El alta válida devuelve `201 Created` y limpia el formulario. El duplicado devuelve `409 Conflict`, muestra la advertencia y **conserva el borrador en pantalla**.
-
-### G-05 · Registro de venta multirrenglón y descuento de stock
-- **Acción**: En la sección de Ventas, seleccionar un cliente y agregar al menos dos libros con cantidades enteras positivas. Confirmar la venta.
-- **Resultado esperado**: La API responde `201 Created` con el ID de venta y los importes calculados por el servidor. El formulario se vacía, el stock de los libros vendidos disminuye en el catálogo y la venta aparece en el historial.
-
-### G-06 · Demostración de precio histórico congelado
-- **Acción**:
-  1. Registrar una venta con *Rayuela* a su precio actual ($ 25.000).
-  2. Mediante la API o consola, actualizar el precio de catálogo de *Rayuela* a $ 35.000 (`PATCH /api/libros/1`).
-  3. Consultar el detalle de la venta anterior en `#historial`.
-- **Resultado esperado**: En el catálogo *Rayuela* figura a $ 35.000, pero la venta histórica conserva inmutable el precio unitario de $ 25.000 y el total original facturado.
-
-### G-07 · Rechazo por stock insuficiente y persistencia
-- **Acción**: Intentar registrar una venta solicitando una cantidad superior al stock disponible de un libro.
-- **Resultado esperado**: La API rechaza con HTTP `409 Conflict`. La venta no se registra, el stock no varía y el borrador de la venta permanece en pantalla para ser corregido.
-- **Persistencia**: Recargar la página o reiniciar el contenedor; los datos previamente guardados continúan disponibles en PostgreSQL.
+| **G-01 · Catálogo** | Buscar por título (ej. `"RAYU"`), avanzar con `limit` y `offset` y probar una búsqueda sin coincidencias. Abrir el detalle de un libro con «Ver autores». | `GET /api/libros/` filtra sin distinguir mayúsculas, pagina desde `offset=0`, diferencia búsqueda sin coincidencias y `GET /api/libros/{id}` muestra los autores ordenados y «Sin clasificar» cuando el género es nulo. |
+| **G-02 · Alta de libro** | Crear un libro con stock entero $\ge 0$, género opcional y autorías con rol. Consultar el detalle. Repetir el ISBN y enviar. | El alta válida devuelve `201 Created`, limpia el formulario y actualiza las vistas. Al repetir el ISBN devuelve `409 Conflict`, muestra el mensaje del servidor y conserva el borrador en el formulario. |
+| **G-03 · Alta de cliente** | Crear un cliente con nombre y email y recuperarlo por ID (`GET /api/clientes/{id}`). Repetir el email y enviar. | El alta válida devuelve `201 Created` y la búsqueda por ID muestra su nombre. Al repetir el email devuelve `409 Conflict` y conserva los datos en el formulario. |
+| **G-04 · Venta** | Registrar una venta válida con dos renglones. Verificar el `201` y consultar el detalle en el historial después de recargar la página. | `POST /api/ventas/` devuelve `201 Created` con precios unitarios, subtotales y total calculados por la API. Tras recargar la página, `GET /api/ventas/{id}` devuelve el mismo detalle desde PostgreSQL. |
+| **G-05 · Precio histórico** | Cambiar el precio de un libro vendido con `PATCH /libros/{id}` y verificar la venta anterior en el historial. | El catálogo muestra el nuevo precio del libro, pero la venta anterior conserva intactos sus importes históricos (`precio_unitario`, subtotales y `total`). |
+| **G-06 · Rechazo** | Probar una venta con un ID inexistente o stock insuficiente (`409`) y renglones con libros repetidos (`422`). | El servidor responde `409` y `422` respectivamente, se conserva el borrador de la venta sin limpiar y el historial queda sin cambios. |
+| **G-07 · Despliegue** | Construir la imagen del frontend, abrir la URL pública por HTTPS, consultar `/api/health/ready` y redesplegar el servicio. | La imagen se construye, la URL pública abre por HTTPS, `/api/health/ready` responde `200` y los datos en PostgreSQL siguen disponibles tras un redespliegue. |
