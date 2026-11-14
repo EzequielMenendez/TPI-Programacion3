@@ -164,7 +164,7 @@ Paso │ Agente A (Frontend Core)         │ Agente B (DevOps / Docker)       �
 ---
 
 ### [C-05] `backend-docker-compose`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado (`openspec/changes/archive/2026-11-14-backend-docker-compose/`)
 - **Scope**: Dockerización del backend FastAPI en Python 3.12 con migraciones automáticas en arranque y orquestación multi-contenedor local con Docker Compose (Ejercicio 5)
   - Creación de `backend/Dockerfile`: imagen `python:3.12-slim`, instalación de `curl` para healthchecks, copia de `requirements.txt` e instalación con `pip --no-cache-dir`, copia de paquetes `app/`, `migrations/`, `scripts/` y `alembic.ini`, exposición del puerto 8000.
   - Automatización de migraciones en inicio (`IN-04`): configuración de comando de arranque `CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]` para garantizar idempotencia del esquema de base de datos antes de recibir tráfico HTTP.
