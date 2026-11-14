@@ -1,0 +1,47 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: libreria-db
+    environment:
+      POSTGRES_USER: libreria_user
+      POSTGRES_PASSWORD: libreria_password
+      POSTGRES_DB: libreria
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U libreria_user -d libreria"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: libreria-backend
+    environment:
+      DATABASE_URL: postgresql+asyncpg://libreria_user:libreria_password@db:5432/libreria
+      SQL_ECHO: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: libreria-frontend
+    environment:
+      API_UPSTREAM: backend:8000
+      NGINX_ENVSUBST_FILTER: ^API_UPSTREAM$
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+
+volumes:
+  pgdata:
