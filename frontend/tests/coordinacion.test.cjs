@@ -48,7 +48,7 @@ function alta(tipo, datos, responder) {
     },
   });
   for (const archivo of ['datos', 'utilidades', 'api', 'catalogo', 'libros', 'clientes']) {
-    vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'js', archivo + '.js'), 'utf8'), sandbox);
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'public', 'js', archivo + '.js'), 'utf8'), sandbox);
   }
   const textoErrores = () => {
     const lista = nodo(tipo === 'libro' ? 'libros-errores' : 'clientes-errores').hijos[0];

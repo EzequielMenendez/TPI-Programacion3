@@ -80,7 +80,7 @@ function crearEntornoCatalogo(responder) {
   });
 
   for (const archivo of ['datos', 'utilidades', 'api', 'catalogo']) {
-    const ruta = path.join(__dirname, '..', 'js', archivo + '.js');
+    const ruta = path.join(__dirname, '..', 'public', 'js', archivo + '.js');
     vm.runInContext(fs.readFileSync(ruta, 'utf8'), sandbox, { filename: ruta });
   }
 

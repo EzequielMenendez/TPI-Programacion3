@@ -1,3 +1,5 @@
+> **Estructura actual:** los recursos públicos están en `public/`. El frontend integrado requiere una API accesible mediante `/api/`; el contenido histórico sobre `file://` y `localStorage` describe ejercicios anteriores. Para construir la imagen Nginx, ejecutar `docker build -t paginas-frontend frontend` desde la raíz y proporcionar `API_UPSTREAM` (host:puerto alcanzable) al iniciar el contenedor.
+
 # TPI · Frontend de una librería
 
 Programación III · Tecnicatura Universitaria en Programación a Distancia (UTN)

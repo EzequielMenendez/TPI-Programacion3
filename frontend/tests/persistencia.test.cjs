@@ -20,13 +20,13 @@ function contextoPersistencia(almacenamiento = crearAlmacenamiento(), autoInicia
     __E6_NO_AUTOINICIALIZAR__: !autoInicializar,
     document: { addEventListener() {} },
   });
-  const datos = path.join(__dirname, '..', 'js', 'datos.js');
+  const datos = path.join(__dirname, '..', 'public', 'js', 'datos.js');
   vm.runInContext(fs.readFileSync(datos, 'utf8'), sandbox, { filename: datos });
-  const utilidades = path.join(__dirname, '..', 'js', 'utilidades.js');
+  const utilidades = path.join(__dirname, '..', 'public', 'js', 'utilidades.js');
   vm.runInContext(fs.readFileSync(utilidades, 'utf8'), sandbox, { filename: utilidades });
-  const catalogo = path.join(__dirname, '..', 'js', 'catalogo.js');
+  const catalogo = path.join(__dirname, '..', 'public', 'js', 'catalogo.js');
   vm.runInContext(fs.readFileSync(catalogo, 'utf8'), sandbox, { filename: catalogo });
-  const ventasModelo = path.join(__dirname, '..', 'js', 'ventas-modelo.js');
+  const ventasModelo = path.join(__dirname, '..', 'public', 'js', 'ventas-modelo.js');
   vm.runInContext(fs.readFileSync(ventasModelo, 'utf8'), sandbox, { filename: ventasModelo });
   return { run: (codigo) => vm.runInContext(codigo, sandbox), almacenamiento };
 }

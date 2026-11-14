@@ -13,11 +13,11 @@ El frontend se empaqueta utilizando la imagen oficial ligera `nginx:1.30-alpine`
 ```dockerfile
 # frontend/Dockerfile
 FROM nginx:1.30-alpine
+ENV NGINX_ENVSUBST_FILTER=^API_UPSTREAM$
 
 # Copiar archivos estáticos de la interfaz
-COPY index.html /usr/share/nginx/html/
-COPY css/ /usr/share/nginx/html/css/
-COPY js/ /usr/share/nginx/html/js/
+COPY public/ /usr/share/nginx/html/
+RUN chmod -R a+rX /usr/share/nginx/html/
 
 # Copiar plantilla de configuración de Nginx para sustitución con envsubst
 COPY default.conf.template /etc/nginx/templates/default.conf.template

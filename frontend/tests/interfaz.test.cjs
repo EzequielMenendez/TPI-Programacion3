@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const raiz = path.join(__dirname, '..');
+const raiz = path.join(__dirname, '..', 'public');
 
 test('3.1: contrato HTML de navegación, controles etiquetados y mensajes E5', () => {
   const html = fs.readFileSync(path.join(raiz, 'index.html'), 'utf8');
