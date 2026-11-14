@@ -19,4 +19,4 @@
 ## 4. Pruebas y documentación
 - [x] 4.1 Tests con `fetch` simulado: contrato, 201, 409, 422, sin conexión, autores (`tests/coordinacion.test.cjs`, `tests/baseline.test.cjs`).
 - [x] 4.2 Documentar en `frontend/README.md` la opción elegida para los selectores.
-- [ ] 4.3 Verificar G-02, G-03 y G-04 contra el backend real (`seed.py` + Nginx) antes de archivar.
+- [x] 4.3 Verificar G-02, G-03 y G-04 contra el backend real (`seed.py` + Nginx) antes de archivar.

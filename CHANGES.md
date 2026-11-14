@@ -95,7 +95,7 @@ Paso │ Agente A (Frontend Core)         │ Agente B (DevOps / Docker)       �
 ## FASE 2 — Persistencia de Altas y Sincronización de Selectores (Ejercicio 2)
 
 ### [C-02] `frontend-altas-integration`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado (`openspec/changes/archive/2026-11-14-frontend-altas-integration/`)
 - **Scope**: Integración de formularios de alta de libros y clientes con persistencia relacional en base de datos, carga dinámica de selectores y preservación de borradores ante conflicto (Ejercicio 2 · Casos G-02, G-03, G-04)
   - Carga reactiva de selectores en `frontend/js/libros.js`: consumo de `GET /api/editoriales/`, `GET /api/generos/` y `GET /api/autores/` al montar la vista de altas para poblar `<select>` y casillas de autores (`DD-01`), con soporte para verificación individual con `GET /api/autores/{id}` y `GET /api/clientes/{id}`.
   - Formulario `#form-libro` y alta atómica (Caso G-02): despacho de `POST /api/libros/` con payload estructurado `LibroCreate` (`titulo`, `isbn`, `precio`, `stock`, `editorial_id`, `genero_id` opcional, y array `autores: [{autor_id, rol, orden}]` resolviendo `IN-02` y `RN-LIB-06`).
