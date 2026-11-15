@@ -188,7 +188,7 @@ Paso │ Agente A (Frontend Core)         │ Agente B (DevOps / Docker)       �
 ## FASE 5 — Despliegue en la Nube, Evidencias y Documentación (Ejercicio 5 & Entrega)
 
 ### [C-06] `deployment-docs-evidence`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado (`openspec/changes/archive/2026-11-15-deployment-docs-evidence/`)
 - **Scope**: Documentación completa del proyecto, guía operativa de despliegue en Easypanel, y compilación de la suite de evidencias para los casos G-01 a G-07 (Ejercicio 5 & Entrega)
   - Actualización del archivo `README.md` en la raíz del proyecto: visión general del sistema, arquitectura en 3 capas, guía de inicio rápido con Docker Compose (`docker compose up --build`), configuración de variables de entorno no sensibles, y enlaces de navegación hacia la base de conocimiento y documentación técnica.
   - Creación de `DEPLOY.md`: guía paso a paso para la cátedra y evaluadores detallando la configuración de los 3 servicios en Easypanel (PostgreSQL con volumen `/var/lib/postgresql/data`, Backend con path de build `/backend` y Frontend con path `/frontend`), URL pública activa en Easypanel con certificado SSL/TLS, credenciales ficticias de prueba, variables de entorno inyectadas e instrucciones de prueba sin CORS.
