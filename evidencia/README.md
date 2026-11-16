@@ -19,6 +19,8 @@ Esta carpeta reúne la evidencia técnica y funcional exigida por la consigna de
 | [`G-01_a_G-07/G-05_precio_historico.md`](G-01_a_G-07/G-05_precio_historico.md) | **Caso G-05 · Precio histórico**: actualización del precio de catálogo mediante `PATCH /api/libros/{id}` y comprobación de que la venta anterior en el historial conserva sus importes congelados. |
 | [`G-01_a_G-07/G-06_rechazo_409_422.md`](G-01_a_G-07/G-06_rechazo_409_422.md) | **Caso G-06 · Rechazo**: intento de venta con ID inexistente / stock insuficiente (`409 Conflict`) y con renglones repetidos (`422 Unprocessable Entity`), verificando que el borrador se conserva y el historial no cambia. |
 | [`G-01_a_G-07/G-07_despliegue_salud.md`](G-01_a_G-07/G-07_despliegue_salud.md) | **Caso G-07 · Despliegue**: construcción de imágenes Docker, verificación de `/api/health/ready` (`200 OK`), acceso por HTTPS sin errores de CORS y persistencia de datos en PostgreSQL tras redespliegue. |
+| [`G-01_a_G-07/salida_verificador_url_publica.txt`](G-01_a_G-07/salida_verificador_url_publica.txt) | Salida real del verificador ejecutado contra la URL pública `https://grupo3-mateo-frontend.ugpvou.easypanel.host/api` (todos los casos OK). |
+| [`capturas/`](capturas/) | Capturas tomadas desde la URL pública y desde Easypanel: catálogo (G-01), 409 de ISBN (G-02), cliente por ID y 409 de email (G-03), venta 201 y detalle tras recargar (G-04), precio histórico (G-05), 409 con borrador conservado (G-06), logs de migraciones, health/seed y redespliegue (G-07). Sin contraseñas. |
 
 ---
 

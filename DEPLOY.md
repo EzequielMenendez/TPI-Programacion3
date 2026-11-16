@@ -10,8 +10,10 @@
 |---|---|
 | **Integrantes del grupo** | Ignacio Rodríguez · Ezequiel Menéndez · Mateo Algañaraz · Nicolás Morón · Santiago Barretto |
 | **Repositorio y rama** | `https://github.com/EzequielMenendez/TPI-Programacion3` (rama `main`) |
-| **URL pública (Easypanel)** | `https://<dominio-easypanel-del-grupo>/` *(completar al publicar en la VPS)* |
-| **Endpoint de salud público** | `https://<dominio-easypanel-del-grupo>/api/health/ready` → `200 OK` |
+| **URL pública (Easypanel)** | [https://grupo3-mateo-frontend.ugpvou.easypanel.host/](https://grupo3-mateo-frontend.ugpvou.easypanel.host/) |
+| **Endpoint de salud público** | `https://grupo3-mateo-frontend.ugpvou.easypanel.host/api/health/ready` → `200 OK` `{"estado":"listo","base":"ok"}` |
+| **Revisión desplegada** | commit `a28678f` de `main` |
+| **Proyecto Easypanel** | `grupo3-mateo` · servicios `db-global` (Postgres 16), `backend` (App) y `frontend` (App) |
 | **Build Path Frontend** | `/frontend` (Builder: `Dockerfile`, ruta relativa: `Dockerfile`) |
 | **Build Path Backend** | `/backend` (Builder: `Dockerfile`, ruta relativa: `Dockerfile`) |
 | **Puertos internos** | Frontend (Nginx): `80` (HTTP) · Backend (Uvicorn): `8000` (HTTP) · PostgreSQL: `5432` (privado) |
@@ -19,6 +21,19 @@
 | **Nombres de variables de entorno** | Frontend: `API_UPSTREAM`, `NGINX_ENVSUBST_FILTER` · Backend: `DATABASE_URL`, `SQL_ECHO` · DB: `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` |
 | **Migraciones de esquema** | `alembic upgrade head` (ejecutado automáticamente en el `CMD` de `backend/Dockerfile` al iniciar) |
 | **Carga inicial de datos (`seed`)** | `python -m scripts.seed` (ejecutado desde la pestaña **Shell** del servicio `backend`) |
+
+---
+
+## 1.1 Registro del Despliegue Realizado (15/11/2026)
+
+| Paso | Configuración aplicada | Resultado observado |
+|---|---|---|
+| Postgres | Servicio `db-global`, imagen `postgres:16-alpine`, base `libreria`, usuario `libreria_user`, contraseña generada por Easypanel. Host interno `grupo3-mateo_db-global:5432`, sin exponer. | En ejecución. |
+| Backend | App `backend`, Git `https://github.com/EzequielMenendez/TPI-Programacion3.git` rama `main`, Build Path `/backend`, Dockerfile `Dockerfile`. Environment: `DATABASE_URL=postgresql+asyncpg://libreria_user:***@grupo3-mateo_db-global:5432/libreria`, `SQL_ECHO=false`. Se eliminó el dominio público automático: solo queda `http://grupo3-mateo_backend:80/` interno. | Build OK. Logs: `alembic upgrade head` aplicó `474a246cb918` y `f3bb61a7b792`; `Uvicorn running on http://0.0.0.0:8000`. Shell: health → `200`. |
+| Carga inicial | Shell del backend: `python -m scripts.seed` (una sola vez, base nueva). | `Datos iniciales cargados: 3 editoriales, 3 géneros, 5 autores, 5 libros, 2 clientes, 1 venta.` |
+| Frontend | App `frontend`, mismo repo/rama, Build Path `/frontend`, Dockerfile `Dockerfile`. Environment: `API_UPSTREAM=grupo3-mateo_backend:8000`. Domains: `https://grupo3-mateo-frontend.ugpvou.easypanel.host` → HTTP, puerto `80`. | Build OK. `https://grupo3-mateo-frontend.ugpvou.easypanel.host/api/health/ready` → `200`. |
+| Verificación | `python evidencia/verificar_global.py https://grupo3-mateo-frontend.ugpvou.easypanel.host/api` | G-01 a G-07 OK (ver `evidencia/G-01_a_G-07/salida_verificador_url_publica.txt`). |
+| Redespliegue | Deploy de `backend` y `frontend` sin volver a correr el seed. | Health `200`; ventas `1`, `2` y `4` y los 7 libros siguen disponibles con sus importes. |
 
 ---
 

@@ -1,0 +1,37 @@
+# Salida de: python evidencia/verificar_global.py https://grupo3-mateo-frontend.ugpvou.easypanel.host/api
+# Fecha: 2026-11-15 (base recien sembrada con python -m scripts.seed)
+
+=== G-07 · Salud de la API (/health/live y /health/ready) ===
+  [OK] GET /health/ready -> 200 {'estado': 'listo', 'base': 'ok'}
+
+=== G-01 · Catálogo, búsqueda insensible, paginación y detalle ===
+  [OK] GET /libros/?limit=20&offset=0 -> 200 (5 libros; libro 5 genero=None)
+  [OK] GET /libros/?titulo=RAYU -> 200 (1 coincidencia: Rayuela)
+  [OK] GET /libros/?limit=2&offset=2 -> 200 (libros 3 y 4)
+  [OK] GET /libros/?titulo=inexistente-xyz -> 200 []
+  [OK] GET /libros/5 -> 200 (3 autores ordenados)
+
+=== G-02 · Alta de libro (201), consulta de detalle y rechazo de ISBN repetido (409) ===
+  [OK] POST /libros/ -> 201 (id=6, titulo=Historias de cronopios y de famas)
+  [OK] POST /libros/ (ISBN repetido) -> 409 (Ya existe un libro con ese ISBN.)
+
+=== G-03 · Alta de cliente (201), consulta por ID y rechazo de email repetido (409) ===
+  [OK] POST /clientes/ -> 201 (id=3, email=lucia.gomez@example.com)
+  [OK] GET /clientes/3 -> 200 (Lucía Gómez)
+  [OK] POST /clientes/ (email repetido) -> 409 (Ya existe un cliente con ese email.)
+
+=== G-04 · Venta válida con dos renglones (201) y consulta de detalle persistido ===
+  [OK] POST /ventas/ -> 201 (id=2, total=77000.00)
+  [OK] GET /ventas/2 -> 200 (persiste detalle e importes)
+
+=== G-05 · Precio histórico inmutable tras PATCH /libros/1 ===
+  [OK] PATCH /libros/1 -> precio catálogo 35000.00; venta histórica conserva precio_unitario=25000.00 y total=77000.00
+
+=== G-06 · Rechazo por ID inexistente / sin stock (409) y renglones repetidos (422) ===
+  [OK] POST /ventas/ (cliente_id=999) -> 409 (El cliente indicado no existe.)
+  [OK] POST /ventas/ (libro_id=999) -> 409 (No existe el libro con id 999.)
+  [OK] POST /ventas/ (stock insuficiente) -> 409 (No hay stock suficiente para alguno de los libros.)
+  [OK] POST /ventas/ (renglones repetidos) -> 422
+  [OK] GET /ventas/ -> el historial queda igual (2 ventas)
+
+>>> TODOS LOS CASOS GLOBALES (G-01 a G-07) VERIFICADOS EXITOSAMENTE.
