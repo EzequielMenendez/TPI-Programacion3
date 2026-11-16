@@ -87,7 +87,7 @@ Requisitos: Docker y Docker Compose en ejecución.
 
 3. **Abrir y verificar la aplicación**:
    - **Interfaz web (Nginx)**: [http://localhost](http://localhost)
-   - **Salud de la API vía proxy**: [http://localhost/api/health/ready](http://localhost/api/health/ready) *(debe devolver HTTP `200` con `{"status":"ok"}`)*
+   - **Salud de la API vía proxy**: [http://localhost/api/health/ready](http://localhost/api/health/ready) *(debe devolver HTTP `200` con `{"estado":"listo","base":"ok"}`)*
    - **Documentación interactiva (FastAPI)**: [http://localhost:8000/docs](http://localhost:8000/docs)
 
 4. **Detener el entorno**:

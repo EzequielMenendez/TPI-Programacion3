@@ -6,6 +6,9 @@ server {
     index index.html;
 
     location / {
+        # Revalidar HTML/CSS/JS en cada carga: tras un redespliegue el navegador
+        # no sigue usando la versión anterior de los scripts.
+        add_header Cache-Control "no-cache" always;
         try_files $uri $uri/ /index.html;
     }
 

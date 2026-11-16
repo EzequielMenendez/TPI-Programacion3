@@ -79,5 +79,6 @@ test('Global E2: mensajes del servidor para 409 y 422', () => {
     JSON.parse(run('JSON.stringify(mensajesDeErrorApi(422, {detail:[{loc:["body","autores",0,"rol"],msg:"Input should be autor"},{loc:["body"],msg:"Value error, x"}]}))')),
     ['autores[0].rol: Input should be autor', 'Value error, x']
   );
-  assert.deepEqual(JSON.parse(run('JSON.stringify(mensajesDeErrorApi(502, null))')), ['El servidor respondió con un error (502).']);
+  assert.deepEqual(JSON.parse(run('JSON.stringify(mensajesDeErrorApi(502, null))')), ['No se pudo conectar con la API (502). Revisá que el backend esté en ejecución y volvé a intentar.']);
+  assert.deepEqual(JSON.parse(run('JSON.stringify(mensajesDeErrorApi(500, null))')), ['El servidor respondió con un error (500).']);
 });

@@ -53,6 +53,10 @@ function mensajesDeErrorApi(status, cuerpo) {
       return campo === "" ? texto : `${campo}: ${texto}`;
     });
   }
+  if ([502, 503, 504].includes(status)) {
+    // Nginx responde por su cuenta cuando no alcanza a la API (caída o reiniciando).
+    return [`No se pudo conectar con la API (${status}). Revisá que el backend esté en ejecución y volvé a intentar.`];
+  }
   return [`El servidor respondió con un error (${status}).`];
 }
 

@@ -294,7 +294,7 @@ function renderizarCatalogoApi(libros, elementos) {
       "message--info"
     );
   } else if (termino === "") {
-    const plural = libros.length === 1 ? "libro mostrado" : "libros mostrados";
+    const plural = libros.length === 1 ? "libro" : "libros";
     mostrarEstadoCatalogo(
       mensaje,
       `Mostrando ${libros.length} ${plural} del catálogo (desde ${estadoCatalogo.offset + 1}).`,

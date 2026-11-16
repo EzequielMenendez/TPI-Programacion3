@@ -32,6 +32,22 @@ const estadoHistorial = {
   offset: 0,
 };
 
+/* Fecha en 24 h: el "es-AR" por defecto de Chromium usa 12 h sin a. m./p. m. (21:01 se veía 09:01). */
+const formatoFechaVenta = new Intl.DateTimeFormat("es-AR", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hourCycle: "h23",
+});
+
+function formatearFechaVenta(fecha) {
+  const valor = new Date(fecha);
+  return Number.isNaN(valor.getTime()) ? String(fecha ?? "") : formatoFechaVenta.format(valor);
+}
+
 function nombreClienteVenta(cliente) {
   if (!cliente) return "Cliente desconocido";
   return cliente.nombre ?? cliente.nombreCompleto ?? `Cliente #${cliente.id}`;
@@ -251,7 +267,7 @@ function mostrarDetalleVenta(venta) {
   const idCliente = venta.cliente ? venta.cliente.id : "";
   const emailCliente = venta.cliente ? venta.cliente.email : "";
   const datos = document.createElement("p");
-  datos.textContent = `${new Date(venta.fecha).toLocaleString("es-AR")} · ${nombreCliente} (#${idCliente}) · ${emailCliente}`;
+  datos.textContent = `${formatearFechaVenta(venta.fecha)} · ${nombreCliente} (#${idCliente}) · ${emailCliente}`;
 
   const envoltura = document.createElement("div");
   envoltura.className = "table-wrap";
@@ -350,7 +366,7 @@ function renderizarHistorialVentas() {
       : formatearCentavosVenta(venta.totalCentavos);
     fila.append(
       crearCeldaTabla(venta.id),
-      crearCeldaTabla(new Date(venta.fecha).toLocaleString("es-AR")),
+      crearCeldaTabla(formatearFechaVenta(venta.fecha)),
       crearCeldaTabla(nombreClienteVenta(venta.cliente)),
       crearCeldaTabla(totalTexto),
       accion

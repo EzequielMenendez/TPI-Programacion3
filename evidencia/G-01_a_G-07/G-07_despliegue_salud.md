@@ -43,7 +43,8 @@
 - **Respuesta del servidor (`200 OK`)**:
   ```json
   {
-    "status": "ok"
+    "estado": "listo",
+    "base": "ok"
   }
   ```
 - **Verificación desde Shell del contenedor backend (comando de la página 7 del PDF)**:

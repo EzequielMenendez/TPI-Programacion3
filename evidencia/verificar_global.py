@@ -47,7 +47,7 @@ def asegurar(condicion: bool, mensaje: str) -> None:
 def ejecutar_suite(llamar) -> None:
     print("=== G-07 · Salud de la API (/health/live y /health/ready) ===")
     status, datos = llamar("GET", "/health/ready")
-    asegurar(status == 200 and isinstance(datos, dict) and datos.get("status") == "ok", f"Fallo health/ready: {status} {datos}")
+    asegurar(status == 200 and isinstance(datos, dict) and datos.get("estado") == "listo", f"Fallo health/ready: {status} {datos}")
     print("  [OK] GET /health/ready -> 200", datos)
 
     print("\n=== G-01 · Catálogo, búsqueda insensible, paginación y detalle ===")
@@ -134,6 +134,11 @@ def ejecutar_suite(llamar) -> None:
     print("  [OK] PATCH /libros/1 -> precio catálogo 35000.00; venta histórica conserva precio_unitario=25000.00 y total=77000.00")
 
     print("\n=== G-06 · Rechazo por ID inexistente / sin stock (409) y renglones repetidos (422) ===")
+    _, historial_antes = llamar("GET", "/ventas/", {"limit": 100, "offset": 0})
+    status, err_cli = llamar("POST", "/ventas/", cuerpo={"cliente_id": 999, "renglones": [{"libro_id": 1, "cantidad": 1}]})
+    asegurar(status == 409, f"Se esperaba 409 por cliente inexistente: {status} {err_cli}")
+    print(f"  [OK] POST /ventas/ (cliente_id=999) -> 409 ({err_cli.get('detail')})")
+
     status, err_id = llamar("POST", "/ventas/", cuerpo={"cliente_id": 2, "renglones": [{"libro_id": 999, "cantidad": 1}]})
     asegurar(status == 409, f"Se esperaba 409 por libro inexistente: {status} {err_id}")
     print(f"  [OK] POST /ventas/ (libro_id=999) -> 409 ({err_id.get('detail')})")
@@ -149,6 +154,10 @@ def ejecutar_suite(llamar) -> None:
     )
     asegurar(status == 422, f"Se esperaba 422 por renglones repetidos: {status} {err_rep}")
     print("  [OK] POST /ventas/ (renglones repetidos) -> 422")
+
+    _, historial_despues = llamar("GET", "/ventas/", {"limit": 100, "offset": 0})
+    asegurar(historial_antes == historial_despues, "El historial cambió tras los rechazos")
+    print(f"  [OK] GET /ventas/ -> el historial queda igual ({len(historial_despues)} ventas)")
 
     print("\n>>> TODOS LOS CASOS GLOBALES (G-01 a G-07) VERIFICADOS EXITOSAMENTE.")
 
